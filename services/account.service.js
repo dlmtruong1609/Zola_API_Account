@@ -6,7 +6,7 @@ const CONSTANT = require("../utils/account.constants");
 const mail = require("../services/mail.service");
 require("dotenv").config();
 const bcrypt = require("bcryptjs");
-const google = require('googleapis');
+const phoneReg = require('./phone_verification')(process.env.API_KEY);
 // Biến cục bộ trên server này sẽ lưu trữ tạm danh sách token
 // Nen lưu vào Redis hoặc DB
 let tokenList = {};
@@ -31,15 +31,17 @@ const errorFormatter = ({ location, msg, param, value, nestedErrors }) => {
  * service sign
  * @param {*} req
  * @param {*} res
- * @param {body} email
+ * @param {body} phone
  * @param {body} password
  */
 let signin = async (req, res) => {
   let errs = validationResult(req).formatWith(errorFormatter); //format chung
+
+  let phone = req.body.phone;
   if (typeof errs.array() === "undefined" || errs.array().length === 0) {
     try {
       Account.findOne({
-        email: req.body.email,
+        phone: phone,
       }).then(async (account) => {
         const accessToken = await jwtHelper.generateToken(
           account,
@@ -55,12 +57,7 @@ let signin = async (req, res) => {
         //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
         tokenList[refreshToken] = { accessToken, refreshToken };
 
-        res.status(200).send(
-          new Response(false, CONSTANT.SIGN_IN_SUCCESS, {
-            accessToken,
-            refreshToken,
-          })
-        );
+        res.status(200).send(new Response(false, CONSTANT.SIGN_IN_SUCCESS, {accessToken, refreshToken}));
       });
     } catch (error) {
       res.status(400).json(new Response(true, error.message, null));
@@ -70,115 +67,96 @@ let signin = async (req, res) => {
     res.status(400).send(response);
   }
 };
-let sendOTP = async (phoneNumber) => {
-    const identityToolkit = google.identitytoolkit({
-      auth: process.env.APIKEY,
-      version: 'v3',
-    });
-    
-    const response = await identityToolkit.relyingparty.sendVerificationCode({
-      phoneNumber
-    });
-    
-  // save sessionInfo into db. You will need this to verify the SMS code
-  const sessionInfo = response.data.sessionInfo;
-  console.log(sessionInfo);
-}
 /**
  * service signup
  * @param {*} req
  * @param {*} res
- * @param {body} email
+ * @param phone
+ * @param messageSuccess
+ */
+let sendSmsOTP = async (res, phone, messageSuccess) => {
+  await phoneReg.requestPhoneVerification(phone, "+84", "sms", function (err, response) {
+    if (err) {
+        console.log('error creating phone reg request', err);
+        return res.status(500).json(new Response(true, CONSTANT.SMS_FAILED, err));
+    } else {
+        console.log('Success register phone API call: ', response);
+        return res.status(201).send(new Response(false, messageSuccess, null));
+    }
+  });
+}
+
+/**
+ * service signup
+ * @param {*} req
+ * @param {*} res
+ * @param {body} phone
  * @param {body} name
  * @param {body} password
  * @param {body} passwordConfirm
  */
 let signup = async (req, res) => {
   // Request validation
-  // try {
-    console.log("Run");
+  try {
     let phone = req.body.phone;
     let password = req.body.password;
     let name = req.body.name;
-    sendOTP(phone);
     console.log(password);
-    res.send("OK")
-  //   let errs = validationResult(req).formatWith(errorFormatter); //format chung
-  //   if (typeof errs.array() === "undefined" || errs.array().length === 0) {
-  //     bcrypt.hash(password, 10).then((hash) => {
-  //       const account = new Account({
-  //         phone: phone,
-  //         name: name,
-  //         password: password,
-  //         active: false,
-  //         list_friend: [],
-  //         list_phone_book: [],
-  //         role: "MEMBER",
-  //         createdAt: new Date().getTime()
-  //     });
-  //       console.log("account chua save");
-  //       account
-  //         .save()
-  //         .then(async (data) => {
-  //           console.log("account da save");
-  //           sendOTP(phone);
-  //           res
-  //             .status(201)
-  //             .send(new Response(false, CONSTANT.SIGN_UP_SUCCESS, null));
-  //         })
-  //         .catch((err) => {
-  //           let response = new Response(true, CONSTANT.ERROR_FROM_MONGO, [
-  //             { msg: err, param: "" },
-  //           ]);
-  //           res.status(503).send(response);
-  //         });
-  //     });
-  //   } else {
-  //     let response = new Response(true, CONSTANT.INVALID_VALUE, errs.array());
-  //     res.send(response);
-  //   }
-  // } catch (error) {
-  //   res.status(500).send(new Response(true, error, null));
-  // }
+    let errs = validationResult(req).formatWith(errorFormatter); //format chung
+    if (typeof errs.array() === "undefined" || errs.array().length === 0) {
+      bcrypt.hash(password, 10).then((hash) => {
+        const account = new Account({
+          phone: phone,
+          name: name,
+          password: hash,
+          active: false,
+          list_friend: [],
+          list_phone_book: [],
+          role: "MEMBER",
+          createdAt: new Date().getTime()
+      });
+        console.log("account chua save");
+        account
+          .save()
+          .then(async (data) => {
+            console.log("account da save");
+            // send sms otp
+            sendSmsOTP(res, phone, CONSTANT.SIGN_UP_SUCCESS);
+          })
+          .catch((err) => {
+            let response = new Response(true, CONSTANT.ERROR_FROM_MONGO, [
+              { msg: err, param: "" },
+            ]);
+            res.status(503).send(response);
+          });
+      });
+    } else {
+      let response = new Response(true, CONSTANT.INVALID_VALUE, errs.array());
+      res.send(response);
+    }
+  } catch (error) {
+    res.status(500).send(new Response(true, error, null));
+  }
 };
 
 /**
  * Function to send mail active again
  * @param {*} req
  * @param {*} res
- * @param {body} email
+ * @param {body} phone
  */
-let sendMailActiveAgain = (req, res) => {
-  let email = req.query.email;
+let sendSMSActiveAgain = (req, res) => {
+  let phone = req.query.phone;
   Account.findOne({
-    email: email,
-  })
-    .then(async (account) => {
-      const accessToken = await jwtHelper.generateToken(
-        account,
-        accessTokenSecret,
-        accessTokenLife
-      );
-
-      mail.transporter.sendMail(
-        mail.sendTokenAuthorizeAccount(email, accessToken),
-        function (error, info) {
-          if (error) {
-            console.log(error);
-            res
-              .status(503)
-              .send(new Response(true, CONSTANT.SEND_FAILED, info.response));
-          }
-        }
-      );
-      res.status(200).send(new Response(false, CONSTANT.SEND_SUCCESS, null));
-    })
-    .catch((err) => {
+    phone: phone,
+  }).then(async (account) => {
+      sendSmsOTP(res, phone, CONSTANT.SEND_SUCCESS);
+  }).catch((err) => {
       let response = new Response(true, CONSTANT.ERROR_FROM_MONGO, [
         { msg: err, param: "" },
       ]);
       res.status(503).send(response);
-    });
+  });
 };
 
 /**
@@ -188,36 +166,74 @@ let sendMailActiveAgain = (req, res) => {
  * @param {headers} x-access-token
  */
 let accountIsActive = async (req, res) => {
-  try {
-    const decoded = await jwtHelper.verifyToken(
-      req.headers["x-access-token"],
-      accessTokenSecret
-    );
-    const account = decoded.data;
-    Account.findOneAndUpdate(
-      {
-        email: account.email,
-      },
-      {
-        active: true,
-      }
-    ).then(async (account) => {
-      if (account) {
-        res
-          .status(200)
-          .send(new Response(false, CONSTANT.ACTIVE_SUCCESS, null));
-      } else {
-        let response = new Response(
-          true,
-          CONSTANT.TOKEN_HAS_EXPIRED,
-          errs.array()
-        );
-        res.status(401).send(response);
-      }
-    });
-  } catch (error) {
-    res.status(500).send(new Response(true, error, null));
-  }
+  let phone = req.body.phone;
+  let code = req.body.code;
+  phoneReg.verifyPhoneToken(phone, "+84", code, function (err, response) {
+    if (err) {
+        console.log('error creating phone reg request', err);
+        res.status(500).send(new Response(true, err.message, err.errors));
+    } else {
+        console.log('Confirm phone success confirming code: ', response);
+        if (response.success) {
+          try {
+            Account.findOneAndUpdate({
+              phone: phone,
+            }, {
+              active: true,
+            }
+            ).then(async (account) => {
+                res.status(200).send(new Response(false, CONSTANT.ACTIVE_SUCCESS, null));
+            });
+          } catch (error) {
+            res.status(500).send(new Response(true, error, null));
+          }
+        }
+    }
+  })
+};
+/**
+ * This is function verify code response token
+ * @param {*} req
+ * @param {*} res
+ * @param {headers} x-access-token
+ */
+let verifyCode = async (req, res) => {
+  let phone = req.body.phone;
+  let code = req.body.code;
+  phoneReg.verifyPhoneToken(phone, "+84", code, function (err, response) {
+    if (err) {
+        console.log('error creating phone reg request', err);
+        res.status(500).send(new Response(true, err.message, err.errors));
+    } else {
+        console.log('Confirm phone success confirming code: ', response);
+        if (response.success) {
+          try {
+            Account.findOne({
+              phone: phone
+            }).then(async (account) => {
+              const accessToken = await jwtHelper.generateToken(
+                account,
+                accessTokenSecret,
+                accessTokenLife
+              );
+      
+              const refreshToken = await jwtHelper.generateToken(
+                account,
+                refreshTokenSecret,
+                refreshTokenLife
+              );
+              //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
+              tokenList[refreshToken] = { accessToken, refreshToken };
+      
+              res.status(200).send(new Response(false, CONSTANT.CODE_VERIFIED, {accessToken, refreshToken})
+              );
+            });
+          } catch (error) {
+            res.status(500).send(new Response(true, error, null));
+          }
+        }
+    }
+  })
 };
 /**
  * controller refreshToken
@@ -262,41 +278,19 @@ let refreshToken = async (req, res) => {
  * This is function forgot password
  * @param {*} req
  * @param {*} res
- * @param {query} email
+ * @param {query} phone
  */
 let forgotPassword = async (req, res) => {
-  let email = req.query.email;
+  let phone = req.query.phone;
   let errs = validationResult(req).formatWith(errorFormatter); //format chung
   if (typeof errs.array() === "undefined" || errs.array().length === 0) {
     Account.findOne({
-      email: email,
+      phone: phone,
     }).then(async (account) => {
       if (account) {
-        const accessToken = await jwtHelper.generateToken(
-          account,
-          accessTokenSecret,
-          accessTokenLife
-        );
-
-        mail.transporter.sendMail(
-          mail.sendTokenForgotPassword(email, accessToken),
-          function (error, info) {
-            if (error) {
-              console.log(error);
-              res
-                .status(503)
-                .send(new Response(true, CONSTANT.SEND_FAILED, null));
-            } else {
-              res
-                .status(200)
-                .send(new Response(false, CONSTANT.SEND_SUCCESS, null));
-            }
-          }
-        );
+        sendSmsOTP(res, phone, CONSTANT.SEND_SUCCESS);
       } else {
-        res
-          .status(404)
-          .send(new Response(true, CONSTANT.EMAIL_NOT_FOUND, null));
+        res.status(404).send(new Response(true, CONSTANT.PHONE_NOT_FOUND, null));
       }
     });
   } else {
@@ -316,32 +310,25 @@ let forgotPassword = async (req, res) => {
 let changePassword = async (req, res) => {
   // Request validation
   try {
+    let newPassword = req.body.newPassword;
     const decoded = await jwtHelper.verifyToken(
       req.headers["x-access-token"],
       accessTokenSecret
     );
-    const account = decoded.data;
+    const accountDecode = decoded.data;
     let errs = validationResult(req).formatWith(errorFormatter); //format chung
     if (typeof errs.array() === "undefined" || errs.array().length === 0) {
-      bcrypt.hash(req.body.newPassword, 10).then((hash) => {
-        Account.findOneAndUpdate(
-          {
-            email: account.email,
-          },
-          {
-            password: hash,
-          }
+      bcrypt.hash(newPassword, 10).then((hash) => {
+        Account.findOneAndUpdate({
+          phone: accountDecode.phone,
+        }, {
+          password: hash,
+        }
         ).then(async (account) => {
           if (account) {
-            res
-              .status(200)
-              .send(new Response(false, CONSTANT.CHANGE_SUCCESS, null));
+            res.status(200).send(new Response(false, CONSTANT.CHANGE_SUCCESS, null));
           } else {
-            let response = new Response(
-              true,
-              CONSTANT.EMAIL_NOT_FOUND,
-              errs.array()
-            );
+            let response = new Response(true, CONSTANT.PHONE_NOT_FOUND, errs.array());
             res.status(404).send(response);
           }
         });
@@ -365,10 +352,9 @@ let checkToken = async (req, res) => {
 module.exports = {
   signin: signin,
   signup: signup,
-  sendMailActiveAgain: sendMailActiveAgain,
-  refreshToken: refreshToken,
-  checkToken: checkToken,
+  sendSMSActiveAgain: sendSMSActiveAgain,
   forgotPassword: forgotPassword,
   changePassword: changePassword,
   accountIsActive: accountIsActive,
+  verifyCode: verifyCode
 };

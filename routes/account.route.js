@@ -10,8 +10,10 @@ router.get("/api/v0/accounts/passwords/forgot", accountValidator.validateForgotP
 
 router.post("/api/v0/accounts/passwords/change", accountValidator.validateChangePassword(), accountService.changePassword);
 
-router.post('/api/v0/accounts/signup', accountService.signup);
+router.post('/api/v0/accounts/signup', accountValidator.validateRegister(), accountService.signup);
 
-router.get('/api/v0/accounts/active/send', accountService.sendMailActiveAgain);
+router.get('/api/v0/accounts/active/send', accountService.sendSMSActiveAgain);
+
+router.post('/api/v0/accounts/code/verify', accountService.verifyCode);
 
 module.exports = router;

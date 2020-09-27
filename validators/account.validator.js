@@ -6,14 +6,14 @@ let validateRegister = () => {
     return [
         check("name", CONSTANT.NAME_IS_REQUIRED).not().isEmpty(), //validate để trống trường email sử dụng hàm notEmpty()
         check("name", CONSTANT.NAME_SIZE).isLength({min: 6, max: 32}),
-        check("email", CONSTANT.EMAIL_IS_REQUIRED).not().isEmpty(),
-        check("email", CONSTANT.IS_EMAIL).isEmail(),
-        check("email").custom((value , { req }) => {
+        check("phone", CONSTANT.PHONE_IS_REQUIRED).not().isEmpty(),
+        check("phone", CONSTANT.IS_PHONE).matches(/((09|03|07|08|05)+([0-9]{8})\b)/g),
+        check("phone").custom((value , { req }) => {
             return Account.findOne({
-                email: req.body.email
+                phone: req.body.phone
               }).then((account) => {
                 if (account) {
-                    return Promise.reject(CONSTANT.EMAIL_AVAILABLE);
+                    return Promise.reject(CONSTANT.PHONE_AVAILABLE);
                 }
             });
         }),
@@ -30,20 +30,19 @@ let validateRegister = () => {
 }
 let validateLogin = () => {
     return [
-        check("email", CONSTANT.EMAIL_IS_REQUIRED).not().isEmpty(),
-        check("email", CONSTANT.IS_EMAIL).isEmail(),
-        check("email").custom((value, {req}) => {
+        check("phone", CONSTANT.PHONE_IS_REQUIRED).not().isEmpty(),
+        check("phone").custom((value, {req}) => {
             return Account.findOne({
-                email: value
+                phone: value
               }).then((account) => {
                 if(!account) {
-                    return Promise.reject(CONSTANT.EMAIL_NOT_FOUND)
+                    return Promise.reject(CONSTANT.PHONE_NOT_FOUND)
                 }
             });
         }),
-        check("email").custom((value, {req}) => {
+        check("phone").custom((value, {req}) => {
             return Account.findOne({
-                email: value
+                phone: value
               }).then((account) => {
                   console.log(account);
                 if(account.active === false) {
@@ -54,7 +53,7 @@ let validateLogin = () => {
         check("password", CONSTANT.PASSWORD_IS_REQUIRED).not().isEmpty(),
         check("password").custom((value , { req }) => {
             return Account.findOne({
-                email: req.body.email
+                phone: req.body.phone
               }).then((account) => {
                   console.log(account.password);
                 if (account.password === undefined || (account && bcrypt.compareSync(value, account.password) === false)) {
@@ -67,10 +66,10 @@ let validateLogin = () => {
 
 let validateForgotPassword = () => {
     return [
-        check("email", CONSTANT.IS_EMAIL).isEmail(),
-        check("email").custom((value, {req}) => {
+        check("phone", CONSTANT.IS_PHONE).matches(/((09|03|07|08|05)+([0-9]{8})\b)/g),
+        check("phone").custom((value, {req}) => {
             return Account.findOne({
-                email: value
+                phone: value
               }).then((account) => {
                 if(!account) {
                     return Promise.reject(CONSTANT.EMAIL_NOT_FOUND)
