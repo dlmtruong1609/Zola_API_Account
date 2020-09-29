@@ -158,9 +158,77 @@ let findAllUserByCurrentPage = (req, res) => {
         res.status(500).send(new Response(false, error, result ? result : null));
     }
 }
+let addUser = (req, res) => {
+    console.log("ok man");
+
+    // // if data empty
+    if(req.body.constructor === Object && Object.keys(req.body).length === 0) {
+       
+        res.status(200).send(new Response(true, CONSTANT.CONTENT_IS_EMPTY,  [{msg: CONSTANT.BODY_IS_EMPTY, param: ""}]));
+        
+        return;
+    }
+
+    let errs = validationResult(req).formatWith(errorFormatter); //format chung
+
+    if(typeof errs.array() === 'undefined' || errs.array().length === 0) {
+
+        const User=new Account({
+            phone: req.body.phone,
+            name: req.body.name,
+            password: req.body.name,
+            active:req.body.active,
+            role:req.body.role,
+            createdAt:new Date()
+        })
+
+        if(User.active==null){
+
+            User.active=false;
+
+        }
+
+        try {
+            User.save()
+            .then((data) => {
+                res.status(200).send(new Response(false,CONSTANT.USER_ADD_SUCCESS,null));
+            });
+
+        } catch (error) {
+            res.status(400).json(new Response(true,CONSTANT.USER))
+        }
+      
+    } else {
+
+        let response = new Response(true, CONSTANT.INVALID_VALUE, errs.array());
+
+        res.status(400).send(response);
+
+        return;
+
+    }
+
+
+}
+
+let getALLlistUser = (req, res) => {
+    Account.find()
+        .then((allUser)=>{
+            return res.status(200).send(
+                new Response(true,CONSTANT.USER_LIST,allUser)
+            )
+        })
+        .catch((err)=>{
+            res.status(500).send(new Response(false,CONSTANT.SERVER_ERROR,null))
+        })
+        
+}
+
 module.exports = {
     updateProfile: updateProfile,
     getUserProfile: getUserProfile,
     search: search,
-    findAllUserByCurrentPage: findAllUserByCurrentPage
+    findAllUserByCurrentPage: findAllUserByCurrentPage,
+    addUser:addUser,
+    getALLlistUser:getALLlistUser
 }
