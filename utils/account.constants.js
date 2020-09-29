@@ -41,3 +41,5 @@ module.exports.USER_ADD__NO_SUCCESS = 'Can\'t Add User'
 module.exports.USER_LIST = 'List User'
 module.exports.SERVER_ERROR="Server error, Please try again."
 
+module.exports.FIND_USER_SUCCESS="find user success"
+module.exports.NOT_FOUND_USER="not found user"

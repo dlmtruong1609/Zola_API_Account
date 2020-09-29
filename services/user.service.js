@@ -5,6 +5,7 @@ var { validationResult} = require('express-validator');
 const CONSTANT = require('../utils/account.constants');
 require('dotenv').config();
 const bcrypt = require("bcryptjs");
+const { Console } = require('console');
 
 const myCustomLabels = {
     totalDocs: 'itemCount',
@@ -159,8 +160,6 @@ let findAllUserByCurrentPage = (req, res) => {
     }
 }
 let addUser = (req, res) => {
-    console.log("ok man");
-
     // // if data empty
     if(req.body.constructor === Object && Object.keys(req.body).length === 0) {
        
@@ -224,11 +223,56 @@ let getALLlistUser = (req, res) => {
         
 }
 
+let findUserByPhone = (req,res) => {
+    if(req.body.constructor === Object && Object.keys(req.body).length === 0) {
+       
+        res.status(200).send(new Response(true, CONSTANT.CONTENT_IS_EMPTY,  [{msg: CONSTANT.BODY_IS_EMPTY, param: ""}]));
+        
+        return;
+    }
+
+    let errs = validationResult(req).formatWith(errorFormatter); //format chung
+
+    if(typeof errs.array() === 'undefined' || errs.array().length === 0) {
+
+        Account.find({phone:req.body.phone})
+            .then((user)=>{
+                console.log(user.length)
+                if(user.length == 0){
+                    return res.status(404).send(
+                   
+                        new Response(true,CONSTANT.USER_NOT_FOUND,null)
+                    )
+                }else{
+                    return res.status(200).send(
+                   
+                        new Response(true,CONSTANT.FIND_USER_SUCCESS,user)
+                    )
+                }
+               
+            })
+            .catch((err)=>{
+                res.status(500).send(new Response(false,CONSTANT.SERVER_ERROR,null))
+            })
+       
+    } else {
+
+        let response = new Response(true, CONSTANT.INVALID_VALUE, errs.array());
+
+        res.status(400).send(response);
+
+        return;
+
+    }
+}
+
+
 module.exports = {
     updateProfile: updateProfile,
     getUserProfile: getUserProfile,
     search: search,
     findAllUserByCurrentPage: findAllUserByCurrentPage,
     addUser:addUser,
-    getALLlistUser:getALLlistUser
+    getALLlistUser:getALLlistUser,
+    findUserByPhone:findUserByPhone
 }

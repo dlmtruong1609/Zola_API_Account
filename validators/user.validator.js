@@ -38,7 +38,15 @@ let validateAddUser = () => {
 
 }
 
+let validateSearchUserByPhone = () => {
+    return [
+        check("phone", CONSTANT.PHONE_IS_REQUIRED).not().isEmpty(),
+        check("phone", CONSTANT.IS_PHONE).matches(/((09|03|07|08|05)+([0-9]{8})\b)/g)
+    ]
+}
+
 module.exports = {
     validateUpdateProfile: validateUpdateProfile,
-    validateAddUser:validateAddUser
+    validateAddUser:validateAddUser,
+    validateSearchUserByPhone:validateSearchUserByPhone
 }
