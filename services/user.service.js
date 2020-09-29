@@ -5,6 +5,7 @@ var { validationResult} = require('express-validator');
 const CONSTANT = require('../utils/account.constants');
 require('dotenv').config();
 const bcrypt = require("bcryptjs");
+const lengthPassword=10;
 const { Console } = require('console');
 
 const myCustomLabels = {
@@ -159,6 +160,7 @@ let findAllUserByCurrentPage = (req, res) => {
         res.status(500).send(new Response(false, error, result ? result : null));
     }
 }
+
 let addUser = (req, res) => {
     // // if data empty
     if(req.body.constructor === Object && Object.keys(req.body).length === 0) {
@@ -172,42 +174,46 @@ let addUser = (req, res) => {
 
     if(typeof errs.array() === 'undefined' || errs.array().length === 0) {
 
-        const User=new Account({
-            phone: req.body.phone,
-            name: req.body.name,
-            password: req.body.name,
-            active:req.body.active,
-            role:req.body.role,
-            createdAt:new Date()
+
+        bcrypt.hash(req.body.password,lengthPassword,(err,hash)=>{
+           
+            const User=new Account({
+                phone: req.body.phone,
+                name: req.body.name,
+                password: hash,
+                active: req.body.active,
+                role: req.body.role,
+                createdAt: new Date()
+            })
+    
+            if(User.active==null){
+    
+                User.active=false;
+    
+            }
+    
+            try {
+                
+                User.save()
+                .then((data) => {
+                    res.status(200).send(new Response(false,CONSTANT.USER_ADD_SUCCESS,null));
+                });
+    
+            } catch (error) {
+                res.status(400).json(new Response(true,CONSTANT.USER))
+            }
+
         })
 
-        if(User.active==null){
-
-            User.active=false;
-
-        }
-
-        try {
-            User.save()
-            .then((data) => {
-                res.status(200).send(new Response(false,CONSTANT.USER_ADD_SUCCESS,null));
-            });
-
-        } catch (error) {
-            res.status(400).json(new Response(true,CONSTANT.USER))
-        }
+       
       
     } else {
 
         let response = new Response(true, CONSTANT.INVALID_VALUE, errs.array());
 
         res.status(400).send(response);
-
-        return;
-
     }
-
-
+    
 }
 
 let getALLlistUser = (req, res) => {
@@ -253,6 +259,36 @@ let findUserByPhone = (req,res) => {
             })
             .catch((err)=>{
                 res.status(500).send(new Response(false,CONSTANT.SERVER_ERROR,null))
+            })
+       
+    } else {
+
+        let response = new Response(true, CONSTANT.INVALID_VALUE, errs.array());
+
+        res.status(400).send(response);
+
+        return;
+
+    }
+}
+
+let updateUserByPhone = (req,res) => {
+    if(req.body.constructor === Object && Object.keys(req.body).length === 0) {
+       
+        res.status(200).send(new Response(true, CONSTANT.CONTENT_IS_EMPTY,  [{msg: CONSTANT.BODY_IS_EMPTY, param: ""}]));
+        
+        return;
+    }
+
+    let errs = validationResult(req).formatWith(errorFormatter); //format chung
+
+    if(typeof errs.array() === 'undefined' || errs.array().length === 0) {
+
+        Account.find({phone:req.body.phone})
+            .then((user)=>{
+               if(req.body.name!=null){
+                   user.name=req.body.name
+               }
             })
        
     } else {
