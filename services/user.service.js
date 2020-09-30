@@ -186,9 +186,9 @@ let addUser = (req, res) => {
                 createdAt: new Date()
             })
     
-            if(User.active==null){
+            if(User.active === null){
     
-                User.active=false;
+                User.active = false;
     
             }
     
@@ -213,7 +213,7 @@ let addUser = (req, res) => {
 
         res.status(400).send(response);
     }
-    
+
 }
 
 let getALLlistUser = (req, res) => {
@@ -244,7 +244,7 @@ let findUserByPhone = (req,res) => {
         Account.find({phone:req.body.phone})
             .then((user)=>{
                 console.log(user.length)
-                if(user.length == 0){
+                if(user.length === 0){
                     return res.status(404).send(
                    
                         new Response(true,CONSTANT.USER_NOT_FOUND,null)
@@ -283,14 +283,48 @@ let updateUserByPhone = (req,res) => {
     let errs = validationResult(req).formatWith(errorFormatter); //format chung
 
     if(typeof errs.array() === 'undefined' || errs.array().length === 0) {
+        Account.findOne({phone:req.body.phone})   
+            .then((User)=>{
+            
+                if(User.length === 0){
 
-        Account.find({phone:req.body.phone})
-            .then((user)=>{
-               if(req.body.name!=null){
-                   user.name=req.body.name
-               }
+                    res.status(200).send(new Response(false,CONSTANT.NOT_FOUND_USER,null));
+
+                    return;
+                }
+
+                if(req.body.name != "undefined"){
+                    User.name=req.body.name;
+                }
+             
+                if(req.body.active != "undefined"){
+                    User.active = req.body.active;
+                }
+
+                if(req.body.role != "undefined"){
+                    User.role = req.body.role;
+                }
+
+                if(req.body.password != "undefined"){
+                    User.password = bcrypt.hashSync(req.body.password,lengthPassword);
+                }
+
+                Account.findOneAndUpdate({phone:req.body.phone},{
+                            name:User.name,
+                            password:User.password,
+                            active:User.active,
+                            list_friend:User.list_friend,
+                            list_phone_book:User.list_phone_book,
+                            role:User.role
+                        },).then((userUpdate)=>{
+                        res.status(200).send(new Response(false,CONSTANT.UPDATE_PROFILE_SUCCESS,null));
+                })
+            
             })
-       
+            .catch((err)=>{
+                res.status(500).send(new Response(false,CONSTANT.SERVER_ERROR,null))
+            })
+
     } else {
 
         let response = new Response(true, CONSTANT.INVALID_VALUE, errs.array());
@@ -310,5 +344,6 @@ module.exports = {
     findAllUserByCurrentPage: findAllUserByCurrentPage,
     addUser:addUser,
     getALLlistUser:getALLlistUser,
-    findUserByPhone:findUserByPhone
+    findUserByPhone:findUserByPhone,
+    updateUserByPhone:updateUserByPhone
 }
