@@ -35,7 +35,7 @@ const errorFormatter = ({ location, msg, param, value, nestedErrors }) => {
  */
 const signin = async (req, res) => {
   const errs = validationResult(req).formatWith(errorFormatter) // format chung
-
+  console.log(req.body.password)
   const phone = req.body.phone
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
     try {

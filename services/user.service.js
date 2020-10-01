@@ -43,13 +43,7 @@ const updateProfile = async (req, res) => {
 
   const body = req.body
   const name = body.name
-  const phone = body.phone
-  const avatar = body.profile.avatar
-  const city = body.process.address.city
-  const district = body.process.address.district
-  const ward = body.process.address.ward
-  const street = body.process.address.street
-  const number = body.process.address.number
+  const avatar = body.avatar
   const decoded = await jwtHelper.verifyToken(req.headers['x-access-token'], accessTokenSecret)
   const userDecode = decoded.data
 
@@ -59,17 +53,7 @@ const updateProfile = async (req, res) => {
         phone: userDecode.phone
       }, {
         name: name,
-        profile: {
-          avatar: avatar,
-          phone: phone,
-          address: {
-            city: city,
-            district: district,
-            ward: ward,
-            street: street,
-            number: number
-          }
-        }
+        avatar: avatar
       }).then((_account) => {
         res.status(200).send(new Response(false, CONSTANT.UPDATE_PROFILE_SUCCESS, null))
       })
@@ -194,7 +178,7 @@ const addUser = (req, res) => {
 }
 
 const getALLlistUser = (_req, res) => {
-  Account.find()
+  Account.find().select({ password: 0 })
     .then((allUser) => {
       return res.status(200).send(
         new Response(true, CONSTANT.USER_LIST, allUser)

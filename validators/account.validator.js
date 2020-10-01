@@ -10,7 +10,7 @@ const validateRegister = () => {
     check('phone', CONSTANT.IS_PHONE).matches(/((09|03|07|08|05)+([0-9]{8})\b)/g),
     check('phone').custom((value, { req }) => {
       return Account.findOne({
-        phone: req.body.phone
+        phone: value
       }).then((account) => {
         if (account) {
           return Promise.reject(CONSTANT.PHONE_AVAILABLE)
@@ -52,7 +52,7 @@ const validateLogin = () => {
     check('password', CONSTANT.PASSWORD_IS_REQUIRED).not().isEmpty(),
     check('password').custom((value, { req }) => {
       return Account.findOne({
-        phone: value
+        phone: req.body.phone
       }).then((account) => {
         console.log(account.password)
         if (account.password === undefined || (account && bcrypt.compareSync(value, account.password) === false)) {
