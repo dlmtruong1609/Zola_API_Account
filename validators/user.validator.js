@@ -1,10 +1,38 @@
-const { check } = require('express-validator')
+const { check, query, header } = require('express-validator')
 const Account = require('../models/account.model')
 const CONSTANT = require('../utils/account.constants')
+const jwtHelper = require('../helpers/jwt.helper')
+const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET
+require('dotenv').config()
 
 const validateUpdateProfile = () => {
   return [
-    check('name', CONSTANT.NAME_SIZE).isLength({ min: 6, max: 32 })
+    check('name', CONSTANT.NAME_SIZE).isLength({ min: 6, max: 32 }),
+    query('phone').custom((value, { req }) => {
+      return Account.findOne({
+        phone: value
+      }).then((account) => {
+        if (!account) {
+          return Promise.reject(CONSTANT.USER_NOT_FOUND)
+        }
+      })
+    }),
+    header('x-access-token').custom(async (value, { req }) => {
+      const decoded = await jwtHelper.verifyToken(value, accessTokenSecret)
+      const accountDecode = decoded.data
+      if (accountDecode.role === 'MEMBER') {
+        return Account.findOne({
+          phone: req.query.phone
+        }).then((account) => {
+          console.log(account)
+          if (account && account.phone !== accountDecode.email) {
+            console.log(account.phone !== accountDecode.email)
+            return Promise.reject(CONSTANT.USER_ACCESS_DENIED)
+          }
+        })
+      }
+    })
+
   ]
 }
 

@@ -193,7 +193,7 @@ const findUserByPhone = (req, res) => {
   const errs = validationResult(req).formatWith(errorFormatter) // format chung
   const phone = req.query.phone
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-    Account.find({ phone: phone })
+    Account.find({ phone: phone }).select({ password: 0 })
       .then((user) => {
         return res.status(200).send(
 
