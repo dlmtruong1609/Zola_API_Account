@@ -175,9 +175,9 @@ let addUser = (req, res) => {
     if(typeof errs.array() === 'undefined' || errs.array().length === 0) {
 
 
-        bcrypt.hash(req.body.password,lengthPassword,(err,hash)=>{
+        bcrypt.hash(req.body.password,lengthPassword,(err,hash) => {
            
-            const User=new Account({
+            const User = new Account({
                 phone: req.body.phone,
                 name: req.body.name,
                 password: hash,
@@ -243,7 +243,7 @@ let findUserByPhone = (req,res) => {
 
         Account.find({phone:req.body.phone})
             .then((user)=>{
-                console.log(user.length)
+                
                 if(user.length === 0){
                     return res.status(404).send(
                    
@@ -283,47 +283,24 @@ let updateUserByPhone = (req,res) => {
     let errs = validationResult(req).formatWith(errorFormatter); //format chung
 
     if(typeof errs.array() === 'undefined' || errs.array().length === 0) {
-        Account.findOne({phone:req.body.phone})   
-            .then((User)=>{
-            
-                if(User.length === 0){
-
-                    res.status(200).send(new Response(false,CONSTANT.NOT_FOUND_USER,null));
-
-                    return;
-                }
-
-                if(req.body.name != "undefined"){
-                    User.name=req.body.name;
-                }
-             
-                if(req.body.active != "undefined"){
-                    User.active = req.body.active;
-                }
-
-                if(req.body.role != "undefined"){
-                    User.role = req.body.role;
-                }
-
-                if(req.body.password != "undefined"){
-                    User.password = bcrypt.hashSync(req.body.password,lengthPassword);
-                }
-
+      
                 Account.findOneAndUpdate({phone:req.body.phone},{
-                            name:User.name,
-                            password:User.password,
-                            active:User.active,
-                            list_friend:User.list_friend,
-                            list_phone_book:User.list_phone_book,
-                            role:User.role
+                            name:req.body.name,
+                            password:req.body.password,
+                            active:req.body.active,
+                            list_friend:req.body.list_friend,
+                            list_phone_book:req.body.list_phone_book,
+                            role:req.body.role
                         },).then((userUpdate)=>{
-                        res.status(200).send(new Response(false,CONSTANT.UPDATE_PROFILE_SUCCESS,null));
+                            if(userUpdate === null){
+                                res.status(404).send(new Response(false,CONSTANT.NOT_FOUND_USER,null));
+                            }else{
+                                res.status(200).send(new Response(true,CONSTANT.UPDATE_PROFILE_SUCCESS,null));
+                            }
+                       
                 })
             
-            })
-            .catch((err)=>{
-                res.status(500).send(new Response(false,CONSTANT.SERVER_ERROR,null))
-            })
+            
 
     } else {
 
