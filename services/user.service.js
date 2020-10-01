@@ -48,10 +48,6 @@ const errorFormatter = ({ location, msg, param, value, nestedErrors }) => {
  * @param {body} ...field
  */
 let updateProfile = async (req, res) => {
-    if(!req.body) {
-        res.status(200).send(new Response(true, CONSTANT.CONTENT_IS_EMPTY,  [{msg: CONSTANT.BODY_IS_EMPTY, param: ""}]));
-    }
-
     let errs = validationResult(req).formatWith(errorFormatter); //format chung
 
     let body = req.body;
@@ -154,7 +150,7 @@ let findAllUserByCurrentPage = (req, res) => {
             customLabels: myCustomLabels
         };
         Account.paginate({}, options, (err, result) => {
-            res.status(200).send(new Response(false, CONSTANT.FIND_POST_SUCCESS, result ? result : null));
+            res.status(200).send(new Response(false, CONSTANT.FIND_USER_SUCCESS, result ? result : null));
         })
     } catch (error) {
         res.status(500).send(new Response(false, error, result ? result : null));

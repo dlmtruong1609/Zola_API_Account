@@ -60,9 +60,10 @@ let signin = async (req, res) => {
         res.status(200).send(new Response(false, CONSTANT.SIGN_IN_SUCCESS, {accessToken, refreshToken}));
       });
     } catch (error) {
-      res.status(400).json(new Response(true, error.message, null));
+      res.status(400).send(new Response(true, error.message, null));
     }
   } else {
+    console.log("phone: " + phone);
     let response = new Response(true, CONSTANT.INVALID_VALUE, errs.array());
     res.status(400).send(response);
   }
