@@ -8,8 +8,8 @@ router.get('/api/v0/users/profile', userService.getUserProfile)
 router.get('/api/v0/users/search', userService.search)
 router.get('/api/v0/users/list', userService.findAllUserByCurrentPage)
 router.post('/api/v0/users/add', userValidator.validateAddUser(), userService.addUser)
-router.put('/api/v0/users/updateByPhone', userValidator.valiteUpdateUserByPhone(), userService.updateUserByPhone)
-router.get('/api/v0/users/getAllUser', userService.getALLlistUser)
-router.get('/api/v0/users/findUserByPhone', userValidator.validateSearchUserByPhone(), userService.findUserByPhone)
+router.put('/api/v0/users/update', userValidator.valiteUpdateUserByPhone(), userService.updateUserByPhone)
+router.get('/api/v0/users', userService.getALLlistUser)
+router.get('/api/v0/users/detail', userValidator.validateSearchUserByPhone(), userService.findUserByPhone)
 
 module.exports = router

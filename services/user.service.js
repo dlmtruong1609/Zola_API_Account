@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 const Response = require('../utils/response')
 const Account = require('../models/account.model')
 const jwtHelper = require('../helpers/jwt.helper')
@@ -198,9 +199,9 @@ const getALLlistUser = (_req, res) => {
 
 const findUserByPhone = (req, res) => {
   const errs = validationResult(req).formatWith(errorFormatter) // format chung
-
+  const phone = req.query.phone
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-    Account.find({ phone: req.query.phone })
+    Account.find({ phone: phone })
       .then((user) => {
         if (user.length === 0) {
           return res.status(404).send(
@@ -226,15 +227,19 @@ const findUserByPhone = (req, res) => {
 
 const updateUserByPhone = (req, res) => {
   const errs = validationResult(req).formatWith(errorFormatter) // format chung
-
+  const phone = req.body.phone
+  const name = req.body.name
+  const role = req.body.role
+  const list_friend = req.body.list_friend
+  const list_phone_book = req.body.list_phone_book
+  const password = req.body.password
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-    Account.findOneAndUpdate({ phone: req.body.phone }, {
-      name: req.body.name,
-      password: bcrypt.hashSync(req.body.password, lengthPassword),
-      active: req.body.active,
-      list_friend: req.body.list_friend,
-      list_phone_book: req.body.list_phone_book,
-      role: req.body.role
+    Account.findOneAndUpdate({ phone: phone }, {
+      name: name,
+      password: bcrypt.hashSync(password, lengthPassword),
+      list_friend: list_friend,
+      list_phone_book: list_phone_book,
+      role: role
     }).then((userUpdate) => {
       if (userUpdate === null) {
         res.status(404).send(new Response(false, CONSTANT.NOT_FOUND_USER, null))
