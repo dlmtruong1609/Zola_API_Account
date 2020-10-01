@@ -42,24 +42,32 @@ const updateProfile = async (req, res) => {
   const errs = validationResult(req).formatWith(errorFormatter) // format chung
 
   const body = req.body
+  const name = body.name
+  const phone = body.phone
+  const avatar = body.profile.avatar
+  const city = body.process.address.city
+  const district = body.process.address.district
+  const ward = body.process.address.ward
+  const street = body.process.address.street
+  const number = body.process.address.number
   const decoded = await jwtHelper.verifyToken(req.headers['x-access-token'], accessTokenSecret)
   const userDecode = decoded.data
 
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
     try {
       Account.findOneAndUpdate({
-        email: userDecode.email
+        phone: userDecode.phone
       }, {
-        name: body.name,
+        name: name,
         profile: {
-          avatar: body.profile.avatar,
-          phone: body.profile.phone,
+          avatar: avatar,
+          phone: phone,
           address: {
-            city: body.profile.address.city,
-            district: body.profile.address.district,
-            ward: body.profile.address.ward,
-            street: body.profile.address.street,
-            number: body.profile.address.number
+            city: city,
+            district: district,
+            ward: ward,
+            street: street,
+            number: number
           }
         }
       }).then((_account) => {
@@ -81,9 +89,9 @@ const updateProfile = async (req, res) => {
  * @param {query} email
  */
 const getUserProfile = async (req, res) => {
-  const email = req.query.email
+  const phone = req.query.phone
   Account.findOne({
-    email: email
+    phone: phone
   }).select({ password: 0 }).then((user) => {
     if (user) {
       res.status(200).send(new Response(false, CONSTANT.GET_INFO_USER_SUCCESS, user))
@@ -99,22 +107,22 @@ const getUserProfile = async (req, res) => {
  * @param {*} res
  * @param {query} currentPage
  * @param {query} perPage
- * @param {query} name
+ * @param {query} keyword
  */
 const search = (req, res) => {
   try {
     // eslint-disable-next-line no-self-assign
     const currentPage = req.query.currentPage ? req.query.currentPage = req.query.currentPage : req.query.currentPage = 1
     const perPage = req.query.perPage
-    const name = req.query.name
+    const keyword = req.query.keyword
     const options = {
       page: currentPage,
       limit: perPage,
       customLabels: myCustomLabels
     }
-    console.log(name)
+    console.log(keyword)
     Account.paginate({
-      $text: { $search: name }
+      $text: { $search: keyword }
     }, options, (_err, result) => {
       res.status(200).send(new Response(false, CONSTANT.FIND_SUCCESS, result || null))
     })
@@ -203,17 +211,10 @@ const findUserByPhone = (req, res) => {
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
     Account.find({ phone: phone })
       .then((user) => {
-        if (user.length === 0) {
-          return res.status(404).send(
+        return res.status(200).send(
 
-            new Response(true, CONSTANT.USER_NOT_FOUND, null)
-          )
-        } else {
-          return res.status(200).send(
-
-            new Response(true, CONSTANT.FIND_USER_SUCCESS, user)
-          )
-        }
+          new Response(true, CONSTANT.FIND_USER_SUCCESS, user)
+        )
       })
       .catch((_err) => {
         res.status(500).send(new Response(false, CONSTANT.SERVER_ERROR, null))
@@ -241,11 +242,7 @@ const updateUserByPhone = (req, res) => {
       list_phone_book: list_phone_book,
       role: role
     }).then((userUpdate) => {
-      if (userUpdate === null) {
-        res.status(404).send(new Response(false, CONSTANT.NOT_FOUND_USER, null))
-      } else {
-        res.status(200).send(new Response(true, CONSTANT.UPDATE_PROFILE_SUCCESS, null))
-      }
+      res.status(200).send(new Response(true, CONSTANT.UPDATE_PROFILE_SUCCESS, null))
     })
   } else {
     const response = new Response(true, CONSTANT.INVALID_VALUE, errs.array())

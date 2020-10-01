@@ -71,7 +71,7 @@ const validateForgotPassword = () => {
         phone: value
       }).then((account) => {
         if (!account) {
-          return Promise.reject(CONSTANT.EMAIL_NOT_FOUND)
+          return Promise.reject(CONSTANT.PHONE_NOT_FOUND)
         }
       })
     })
