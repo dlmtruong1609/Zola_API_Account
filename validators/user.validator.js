@@ -16,21 +16,6 @@ const validateUpdateProfile = () => {
           return Promise.reject(CONSTANT.USER_NOT_FOUND)
         }
       })
-    }),
-    header('x-access-token').custom(async (value, { req }) => {
-      const decoded = await jwtHelper.verifyToken(value, accessTokenSecret)
-      const accountDecode = decoded.data
-      if (accountDecode.role === 'MEMBER') {
-        return Account.findOne({
-          phone: req.query.phone
-        }).then((account) => {
-          console.log(account)
-          if (account && account.phone !== accountDecode.phone) {
-            console.log(account.phone !== accountDecode.phone)
-            return Promise.reject(CONSTANT.USER_ACCESS_DENIED)
-          }
-        })
-      }
     })
 
   ]
