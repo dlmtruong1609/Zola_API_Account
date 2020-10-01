@@ -25,8 +25,8 @@ const validateUpdateProfile = () => {
           phone: req.query.phone
         }).then((account) => {
           console.log(account)
-          if (account && account.phone !== accountDecode.email) {
-            console.log(account.phone !== accountDecode.email)
+          if (account && account.phone !== accountDecode.phone) {
+            console.log(account.phone !== accountDecode.phone)
             return Promise.reject(CONSTANT.USER_ACCESS_DENIED)
           }
         })
