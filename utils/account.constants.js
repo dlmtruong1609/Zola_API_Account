@@ -33,3 +33,13 @@ module.exports.TOKEN_HAS_EXPIRED = 'Token Has Expired'
 module.exports.ACTIVE_SUCCESS = 'Active Account Success'
 module.exports.ACCCOUNT_IS_NOT_ACTIVE = 'Account is not active'
 module.exports.BODY_IS_EMPTY = 'Body is empty'
+
+module.exports.ROLE_IS_REQUIRED = 'Role is required'
+module.exports.ROLE_INCORRECT = 'Role is incorrect (MEMBER or ADMIN)'
+module.exports.USER_ADD_SUCCESS = 'Add User success'
+module.exports.USER_ADD__NO_SUCCESS = 'Can\'t Add User'
+module.exports.USER_LIST = 'List User'
+module.exports.SERVER_ERROR="Server error, Please try again."
+
+module.exports.FIND_USER_SUCCESS="find user success"
+module.exports.NOT_FOUND_USER="not found user"
