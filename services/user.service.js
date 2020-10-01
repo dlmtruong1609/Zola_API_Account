@@ -161,28 +161,20 @@ let findAllUserByCurrentPage = (req, res) => {
     }
 }
 
-let addUser = (req, res) => {
-    // // if data empty
-    if(req.body.constructor === Object && Object.keys(req.body).length === 0) {
-       
-        res.status(200).send(new Response(true, CONSTANT.CONTENT_IS_EMPTY,  [{msg: CONSTANT.BODY_IS_EMPTY, param: ""}]));
-        
-        return;
-    }
+let addUser = (req , res)  =>  {
 
     let errs = validationResult(req).formatWith(errorFormatter); //format chung
 
-    if(typeof errs.array() === 'undefined' || errs.array().length === 0) {
-
-
-        bcrypt.hash(req.body.password,lengthPassword,(err,hash) => {
+    if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
+        
+        bcrypt.hash(req.body.password ,lengthPassword ,(err ,hash)  =>  {
            
             const User = new Account({
-                phone: req.body.phone,
-                name: req.body.name,
-                password: hash,
-                active: req.body.active,
-                role: req.body.role,
+                phone: req.body.phone ,
+                name: req.body.name ,
+                password: hash ,
+                active: req.body.active ,
+                role: req.body.role ,
                 createdAt: new Date()
             })
     
@@ -195,75 +187,67 @@ let addUser = (req, res) => {
             try {
                 
                 User.save()
-                .then((data) => {
-                    res.status(200).send(new Response(false,CONSTANT.USER_ADD_SUCCESS,null));
+                .then((data)  =>  {
+                    res.status(201).send(new Response(false ,CONSTANT.USER_ADD_SUCCESS ,null));
                 });
     
             } catch (error) {
-                res.status(400).json(new Response(true,CONSTANT.USER))
+                res.status(400).json(new Response(true ,CONSTANT.USER))
             }
 
         })
 
-       
-      
     } else {
 
-        let response = new Response(true, CONSTANT.INVALID_VALUE, errs.array());
+        let response = new Response(true , CONSTANT.INVALID_VALUE , errs.array());
 
         res.status(400).send(response);
     }
 
 }
 
-let getALLlistUser = (req, res) => {
+let getALLlistUser = (req , res)  =>  {
     Account.find()
-        .then((allUser)=>{
+        .then((allUser) => {
             return res.status(200).send(
-                new Response(true,CONSTANT.USER_LIST,allUser)
+                new Response(true ,CONSTANT.USER_LIST ,allUser)
             )
         })
-        .catch((err)=>{
-            res.status(500).send(new Response(false,CONSTANT.SERVER_ERROR,null))
+        .catch((err) => {
+            res.status(500).send(new Response(false ,CONSTANT.SERVER_ERROR ,null))
         })
         
 }
 
-let findUserByPhone = (req,res) => {
-    if(req.body.constructor === Object && Object.keys(req.body).length === 0) {
-       
-        res.status(200).send(new Response(true, CONSTANT.CONTENT_IS_EMPTY,  [{msg: CONSTANT.BODY_IS_EMPTY, param: ""}]));
-        
-        return;
-    }
+let findUserByPhone = (req ,res)  =>  {
 
     let errs = validationResult(req).formatWith(errorFormatter); //format chung
 
-    if(typeof errs.array() === 'undefined' || errs.array().length === 0) {
+    if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
 
-        Account.find({phone:req.body.phone})
-            .then((user)=>{
+        Account.find({phone:req.query.phone})
+            .then((user) => {
                 
                 if(user.length === 0){
                     return res.status(404).send(
                    
-                        new Response(true,CONSTANT.USER_NOT_FOUND,null)
+                        new Response(true ,CONSTANT.USER_NOT_FOUND ,null)
                     )
                 }else{
                     return res.status(200).send(
                    
-                        new Response(true,CONSTANT.FIND_USER_SUCCESS,user)
+                        new Response(true ,CONSTANT.FIND_USER_SUCCESS ,user)
                     )
                 }
                
             })
-            .catch((err)=>{
-                res.status(500).send(new Response(false,CONSTANT.SERVER_ERROR,null))
+            .catch((err) => {
+                res.status(500).send(new Response(false ,CONSTANT.SERVER_ERROR ,null))
             })
        
     } else {
 
-        let response = new Response(true, CONSTANT.INVALID_VALUE, errs.array());
+        let response = new Response(true , CONSTANT.INVALID_VALUE , errs.array());
 
         res.status(400).send(response);
 
@@ -272,39 +256,31 @@ let findUserByPhone = (req,res) => {
     }
 }
 
-let updateUserByPhone = (req,res) => {
-    if(req.body.constructor === Object && Object.keys(req.body).length === 0) {
-       
-        res.status(200).send(new Response(true, CONSTANT.CONTENT_IS_EMPTY,  [{msg: CONSTANT.BODY_IS_EMPTY, param: ""}]));
-        
-        return;
-    }
-
+let updateUserByPhone = (req ,res)  =>  {
+  
     let errs = validationResult(req).formatWith(errorFormatter); //format chung
 
-    if(typeof errs.array() === 'undefined' || errs.array().length === 0) {
+    if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
       
-                Account.findOneAndUpdate({phone:req.body.phone},{
-                            name:req.body.name,
-                            password:req.body.password,
-                            active:req.body.active,
-                            list_friend:req.body.list_friend,
-                            list_phone_book:req.body.list_phone_book,
+                Account.findOneAndUpdate({phone:req.body.phone} ,{
+                            name:req.body.name ,
+                            password:bcrypt.hashSync(req.body.password,lengthPassword) ,
+                            active:req.body.active ,
+                            list_friend:req.body.list_friend ,
+                            list_phone_book:req.body.list_phone_book ,
                             role:req.body.role
-                        },).then((userUpdate)=>{
+                        } ,).then((userUpdate) => {
                             if(userUpdate === null){
-                                res.status(404).send(new Response(false,CONSTANT.NOT_FOUND_USER,null));
+                                res.status(404).send(new Response(false ,CONSTANT.NOT_FOUND_USER ,null));
                             }else{
-                                res.status(200).send(new Response(true,CONSTANT.UPDATE_PROFILE_SUCCESS,null));
+                                res.status(200).send(new Response(true ,CONSTANT.UPDATE_PROFILE_SUCCESS ,null));
                             }
                        
                 })
             
-            
-
     } else {
 
-        let response = new Response(true, CONSTANT.INVALID_VALUE, errs.array());
+        let response = new Response(true , CONSTANT.INVALID_VALUE , errs.array());
 
         res.status(400).send(response);
 
@@ -312,7 +288,6 @@ let updateUserByPhone = (req,res) => {
 
     }
 }
-
 
 module.exports = {
     updateProfile: updateProfile,
