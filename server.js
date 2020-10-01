@@ -6,7 +6,6 @@ const logger = require('morgan')
 require('dotenv').config()
 
 const cors = require('cors')
-const path = require('path')
 const server = express()
 
 server.use(logger('dev'))
