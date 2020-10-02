@@ -1,6 +1,7 @@
 const jwtHelper = require('../helpers/jwt.helper')
 const Response = require('../utils/response')
-const Account = require('../models/account.model')
+const db = require('../models')
+const Account = db.account
 var { validationResult } = require('express-validator')
 const CONSTANT = require('../utils/account.constants')
 require('dotenv').config()
@@ -39,9 +40,7 @@ const signin = async (req, res) => {
   const phone = req.body.phone
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
     try {
-      Account.findOne({
-        phone: phone
-      }).then(async (account) => {
+      Account.findByPk(phone).then(async (account) => {
         const accessToken = await jwtHelper.generateToken(
           account,
           accessTokenSecret,
@@ -105,7 +104,7 @@ const signup = async (req, res) => {
     const errs = validationResult(req).formatWith(errorFormatter) // format chung
     if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
       bcrypt.hash(password, 10).then((hash) => {
-        const account = new Account({
+        const account = {
           phone: phone,
           name: name,
           password: hash,
@@ -114,10 +113,10 @@ const signup = async (req, res) => {
           list_phone_book: [],
           role: 'MEMBER',
           createdAt: new Date().getTime()
-        })
+        }
         console.log('account chua save')
-        account
-          .save()
+        Account
+          .create(account)
           .then(async (data) => {
             console.log('account da save')
             // send sms otp
@@ -147,9 +146,7 @@ const signup = async (req, res) => {
  */
 const sendSMSActiveAgain = (req, res) => {
   const phone = req.query.phone
-  Account.findOne({
-    phone: phone
-  }).then(async (account) => {
+  Account.findByPk(phone).then(async (account) => {
     sendSmsOTP(res, phone, CONSTANT.SEND_SUCCESS)
   }).catch((err) => {
     const response = new Response(true, CONSTANT.ERROR_FROM_MONGO, [
@@ -176,13 +173,14 @@ const accountIsActive = async (req, res) => {
       console.log('Confirm phone success confirming code: ', response)
       if (response.success) {
         try {
-          Account.findOneAndUpdate({
-            phone: phone
-          }, {
-            active: true
-          }
-          ).then(async (account) => {
-            res.status(200).send(new Response(false, CONSTANT.ACTIVE_SUCCESS, null))
+          Account.findByPk(phone).then(user => {
+            user.update({
+              active: true
+            }, {
+              phone: phone
+            }).then(async (account) => {
+              res.status(200).send(new Response(false, CONSTANT.ACTIVE_SUCCESS, null))
+            })
           })
         } catch (error) {
           res.status(500).send(new Response(true, error, null))
@@ -208,9 +206,7 @@ const verifyCode = async (req, res) => {
       console.log('Confirm phone success confirming code: ', response)
       if (response.success) {
         try {
-          Account.findOne({
-            phone: phone
-          }).then(async (account) => {
+          Account.findByPk(phone).then(async (account) => {
             const accessToken = await jwtHelper.generateToken(
               account,
               accessTokenSecret,
@@ -246,9 +242,7 @@ const forgotPassword = async (req, res) => {
   const phone = req.query.phone
   const errs = validationResult(req).formatWith(errorFormatter) // format chung
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-    Account.findOne({
-      phone: phone
-    }).then(async (account) => {
+    Account.findByPk(phone).then(async (account) => {
       if (account) {
         sendSmsOTP(res, phone, CONSTANT.SEND_SUCCESS)
       } else {
@@ -281,18 +275,17 @@ const changePassword = async (req, res) => {
     const errs = validationResult(req).formatWith(errorFormatter) // format chung
     if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
       bcrypt.hash(newPassword, 10).then((hash) => {
-        Account.findOneAndUpdate({
-          phone: accountDecode.phone
-        }, {
-          password: hash
-        }
-        ).then(async (account) => {
-          if (account) {
-            res.status(200).send(new Response(false, CONSTANT.CHANGE_SUCCESS, null))
-          } else {
-            const response = new Response(true, CONSTANT.PHONE_NOT_FOUND, errs.array())
-            res.status(404).send(response)
-          }
+        Account.findByPk(accountDecode.phone).then(user => {
+          user.update({
+            password: hash
+          }).then(async (account) => {
+            if (account) {
+              res.status(200).send(new Response(false, CONSTANT.CHANGE_SUCCESS, null))
+            } else {
+              const response = new Response(true, CONSTANT.PHONE_NOT_FOUND, errs.array())
+              res.status(404).send(response)
+            }
+          })
         })
       })
     } else {

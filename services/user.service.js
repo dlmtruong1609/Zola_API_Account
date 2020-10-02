@@ -1,23 +1,13 @@
 /* eslint-disable camelcase */
 const Response = require('../utils/response')
-const Account = require('../models/account.model')
+const db = require('../models')
+const Account = db.account
 const jwtHelper = require('../helpers/jwt.helper')
 var { validationResult } = require('express-validator')
 const CONSTANT = require('../utils/account.constants')
 require('dotenv').config()
 const bcrypt = require('bcryptjs')
 const lengthPassword = 10
-const myCustomLabels = {
-  totalDocs: 'itemCount',
-  docs: 'itemsList',
-  limit: 'perPage',
-  page: 'currentPage',
-  nextPage: 'next',
-  prevPage: 'prev',
-  totalPages: 'pageCount',
-  pagingCounter: 'slNo',
-  meta: 'paginator'
-}
 // Biến cục bộ trên server này sẽ lưu trữ tạm danh sách token
 // Nen lưu vào Redis hoặc DB
 const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET
@@ -49,13 +39,13 @@ const updateProfile = async (req, res) => {
 
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
     try {
-      Account.findOneAndUpdate({
-        phone: userDecode.phone
-      }, {
-        name: name,
-        avatar: avatar
-      }).then((_account) => {
-        res.status(200).send(new Response(false, CONSTANT.UPDATE_PROFILE_SUCCESS, null))
+      Account.findByPk(userDecode.phone).then(user => {
+        user.update({
+          name: name,
+          avatar: avatar
+        }).then((userUpdate) => {
+          res.status(200).send(new Response(true, CONSTANT.UPDATE_PROFILE_SUCCESS, null))
+        })
       })
     } catch (error) {
       res.status(400).json(new Response(true, error.message, null))
@@ -67,25 +57,6 @@ const updateProfile = async (req, res) => {
 }
 
 /**
- * This is function get profile of user
- * @param {*} req
- * @param {*} res
- * @param {query} email
- */
-const getUserProfile = async (req, res) => {
-  const phone = req.query.phone
-  Account.findOne({
-    phone: phone
-  }).select({ password: 0 }).then((user) => {
-    if (user) {
-      res.status(200).send(new Response(false, CONSTANT.GET_INFO_USER_SUCCESS, user))
-    } else {
-      res.status(404).send(new Response(true, CONSTANT.USER_NOT_FOUND, null))
-    }
-  })
-}
-
-/**
  * This is function to search by title, content, contact (index)
  * @param {*} req
  * @param {*} res
@@ -94,26 +65,18 @@ const getUserProfile = async (req, res) => {
  * @param {query} keyword
  */
 const search = (req, res) => {
-  try {
-    // eslint-disable-next-line no-self-assign
-    const currentPage = req.query.currentPage ? req.query.currentPage = req.query.currentPage : req.query.currentPage = 1
-    const perPage = req.query.perPage
-    const keyword = req.query.keyword
-    const options = {
-      page: currentPage,
-      limit: perPage,
-      customLabels: myCustomLabels
-    }
-    console.log(keyword)
-    Account.paginate({
-      $text: { $search: keyword }
-    }, options, (_err, result) => {
-      res.status(200).send(new Response(false, CONSTANT.FIND_SUCCESS, result || null))
-    })
-  } catch (error) {
-    // eslint-disable-next-line no-undef
-    res.status(500).send(new Response(false, error, result || null))
-  }
+  // // try {
+  //   // eslint-disable-next-line no-self-assign
+  //   // const currentPage = req.query.currentPage ? req.query.currentPage = req.query.currentPage : req.query.currentPage = 1
+  //   // const perPage = req.query.perPage
+  //   // const keyword = req.query.keyword
+
+  //   // console.log(keyword)
+  //   res.status(200).send(new Response(false, CONSTANT.FIND_USER_SUCCESS, Account.searchByText('2112412312') || []))
+  // // } catch (error) {
+  // //   // eslint-disable-next-line no-undef
+  // //   res.status(500).send(new Response(false, error, [] || null))
+  // // }
 }
 
 /**
@@ -129,46 +92,44 @@ const findAllUserByCurrentPage = (req, res) => {
     // eslint-disable-next-line no-self-assign
     const currentPage = req.query.currentPage ? req.query.currentPage = req.query.currentPage : req.query.currentPage = 1
     const perPage = req.query.perPage
-    const options = {
-      page: currentPage,
+
+    Account.findAll({
       limit: perPage,
-      customLabels: myCustomLabels
-    }
-    Account.paginate({}, options, (_err, result) => {
-      res.status(200).send(new Response(false, CONSTANT.FIND_USER_SUCCESS, result || null))
+      offset: currentPage
+    }).then(users => {
+      res.status(200).send(new Response(false, CONSTANT.FIND_USER_SUCCESS, users || []))
     })
   } catch (error) {
     // eslint-disable-next-line no-undef
-    res.status(500).send(new Response(false, error, result || null))
+    res.status(500).send(new Response(false, error, null))
   }
 }
 
 const addUser = (req, res) => {
   const errs = validationResult(req).formatWith(errorFormatter) // format chung
-
+  const phone = req.body.phone
+  const name = req.body.name
+  const password = req.body.password
+  const role = req.body.role
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-    bcrypt.hash(req.body.password, lengthPassword, (_err, hash) => {
-      const User = new Account({
-        phone: req.body.phone,
-        name: req.body.name,
+    bcrypt.hash(password, lengthPassword, (_err, hash) => {
+      const user = {
+        phone: phone,
+        name: name,
         password: hash,
-        active: req.body.active,
-        role: req.body.role,
+        active: true,
+        role: role,
         createdAt: new Date()
-      })
-
-      if (User.active === null) {
-        User.active = false
       }
-
-      try {
-        User.save()
-          .then((_data) => {
-            res.status(201).send(new Response(false, CONSTANT.USER_ADD_SUCCESS, null))
-          })
-      } catch (error) {
-        res.status(400).json(new Response(true, CONSTANT.USER))
-      }
+      console.log(user)
+      // Save Tutorial in the database
+      Account.create(user)
+        .then(data => {
+          res.status(201).send(new Response(false, CONSTANT.USER_ADD_SUCCESS, null))
+        })
+        .catch(err => {
+          res.status(500).json(new Response(true, err.message || 'Some error occurred while creating the Tutorial.', null))
+        })
     })
   } else {
     const response = new Response(true, CONSTANT.INVALID_VALUE, errs.array())
@@ -178,7 +139,11 @@ const addUser = (req, res) => {
 }
 
 const getALLlistUser = (_req, res) => {
-  Account.find().select({ password: 0 })
+  Account.findAll({
+    attributes: {
+      exclude: ['password']
+    }
+  })
     .then((allUser) => {
       return res.status(200).send(
         new Response(true, CONSTANT.USER_LIST, allUser)
@@ -193,10 +158,13 @@ const findUserByPhone = (req, res) => {
   const errs = validationResult(req).formatWith(errorFormatter) // format chung
   const phone = req.query.phone
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-    Account.find({ phone: phone }).select({ password: 0 })
+    Account.findByPk(phone, {
+      attributes: {
+        exclude: ['password']
+      }
+    })
       .then((user) => {
         return res.status(200).send(
-
           new Response(true, CONSTANT.FIND_USER_SUCCESS, user)
         )
       })
@@ -212,21 +180,23 @@ const findUserByPhone = (req, res) => {
 
 const updateUserByPhone = (req, res) => {
   const errs = validationResult(req).formatWith(errorFormatter) // format chung
-  const phone = req.body.phone
+  const phone = req.query.phone
   const name = req.body.name
+  const avatar = req.body.avatar
   const role = req.body.role
   const list_friend = req.body.list_friend
   const list_phone_book = req.body.list_phone_book
-  const password = req.body.password
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-    Account.findOneAndUpdate({ phone: phone }, {
-      name: name,
-      password: bcrypt.hashSync(password, lengthPassword),
-      list_friend: list_friend,
-      list_phone_book: list_phone_book,
-      role: role
-    }).then((userUpdate) => {
-      res.status(200).send(new Response(true, CONSTANT.UPDATE_PROFILE_SUCCESS, null))
+    Account.findByPk(phone).then(user => {
+      Account.update({
+        name: name,
+        avatar: avatar,
+        role: role,
+        list_friend: db.sequelize.fn('list_friend', db.sequelize.col('list_friend'), list_friend),
+        list_phone_book: db.sequelize.fn('list_phone_book', db.sequelize.col('list_phone_book'), list_phone_book)
+      }).then((userUpdate) => {
+        res.status(200).send(new Response(true, CONSTANT.UPDATE_PROFILE_SUCCESS, null))
+      })
     })
   } else {
     const response = new Response(true, CONSTANT.INVALID_VALUE, errs.array())
@@ -237,7 +207,6 @@ const updateUserByPhone = (req, res) => {
 
 module.exports = {
   updateProfile: updateProfile,
-  getUserProfile: getUserProfile,
   search: search,
   findAllUserByCurrentPage: findAllUserByCurrentPage,
   addUser: addUser,

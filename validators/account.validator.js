@@ -1,6 +1,7 @@
 const { check } = require('express-validator')
 const bcrypt = require('bcryptjs')
-const Account = require('../models/account.model')
+const db = require('../models')
+const Account = db.account
 const CONSTANT = require('../utils/account.constants')
 const validateRegister = () => {
   return [
@@ -9,9 +10,7 @@ const validateRegister = () => {
     check('phone', CONSTANT.PHONE_IS_REQUIRED).not().isEmpty(),
     check('phone', CONSTANT.IS_PHONE).matches(/((09|03|07|08|05)+([0-9]{8})\b)/),
     check('phone').custom((value, { req }) => {
-      return Account.findOne({
-        phone: value
-      }).then((account) => {
+      return Account.findByPk(value).then((account) => {
         if (account) {
           return Promise.reject(CONSTANT.PHONE_AVAILABLE)
         }
@@ -31,9 +30,7 @@ const validateRegister = () => {
 const validateLogin = () => {
   return [
     check('phone', CONSTANT.IS_PHONE).matches(/((09|03|07|08|05)+([0-9]{8})\b)/).custom((value, { req }) => {
-      return Account.findOne({
-        phone: value
-      }).then((account) => {
+      return Account.findByPk(value).then((account) => {
         if (!account) {
           return Promise.reject(CONSTANT.PHONE_NOT_FOUND)
         }
@@ -41,9 +38,7 @@ const validateLogin = () => {
     }),
     check('phone', CONSTANT.PHONE_IS_REQUIRED).not().isEmpty(),
     check('phone').custom((value, { req }) => {
-      return Account.findOne({
-        phone: value
-      }).then((account) => {
+      return Account.findByPk(value).then((account) => {
         if (account.active === false) {
           return Promise.reject(CONSTANT.ACCCOUNT_IS_NOT_ACTIVE)
         }
@@ -51,9 +46,7 @@ const validateLogin = () => {
     }),
     check('password', CONSTANT.PASSWORD_IS_REQUIRED).not().isEmpty(),
     check('password').custom((value, { req }) => {
-      return Account.findOne({
-        phone: req.body.phone
-      }).then((account) => {
+      return Account.findByPk(req.body.phone).then((account) => {
         console.log(account.password)
         if (account.password === undefined || (account && bcrypt.compareSync(value, account.password) === false)) {
           return Promise.reject(CONSTANT.PASSWORD_INCORRECT)
@@ -67,9 +60,7 @@ const validateForgotPassword = () => {
   return [
     check('phone', CONSTANT.IS_PHONE).matches(/((09|03|07|08|05)+([0-9]{8})\b)/),
     check('phone').custom((value, { req }) => {
-      return Account.findOne({
-        phone: value
-      }).then((account) => {
+      return Account.findByPk(value).then((account) => {
         if (!account) {
           return Promise.reject(CONSTANT.PHONE_NOT_FOUND)
         }

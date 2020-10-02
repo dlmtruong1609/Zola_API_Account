@@ -24,21 +24,16 @@ server.use(function (req, res, next) {
 server.use('/', accountRouter)
 server.use('/', userRouter)
 
-const mongoose = require('mongoose')
-
-const mongoUrl = `${process.env.DB_URL}`
-// Thiết lập một kết nối mongoose chạy đến khi nào kết nối được mới tiếp tục
-const connectWithRetry = function () {
-  return mongoose.connect(mongoUrl, { useNewUrlParser: true, useFindAndModify: false }, (err) => {
-    if (err) {
-      console.error('Failed to connect to mongo on startup - retrying in 5 sec', err)
-      setTimeout(connectWithRetry, 5000)
-    }
-  })
+const db = require('./models')
+db.sequelize.sync({ alter: true }).then(() => {
+  console.log('Drop and re-sync db.')
+})
+try {
+  db.sequelize.authenticate()
+  console.log('Connection has been established successfully.')
+} catch (error) {
+  console.error('Unable to connect to the database:', error)
 }
-connectWithRetry()
-// Ép Mongoose sử dụng thư viện promise toàn cục
-mongoose.Promise = global.Promise
 
 server.listen(process.env.PORT || '3333', (err) => {
   if (err) throw err
