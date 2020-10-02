@@ -1,8 +1,6 @@
-const { check, query, header } = require('express-validator')
+const { check, query } = require('express-validator')
 const Account = require('../models/account.model')
 const CONSTANT = require('../utils/account.constants')
-const jwtHelper = require('../helpers/jwt.helper')
-const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET
 require('dotenv').config()
 
 const validateUpdateProfile = () => {
