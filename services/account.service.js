@@ -55,7 +55,7 @@ const signin = async (req, res) => {
         //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
         tokenList[refreshToken] = { accessToken, refreshToken }
 
-        res.status(200).send(new Response(false, CONSTANT.SIGN_IN_SUCCESS, { accessToken, refreshToken }))
+        res.status(200).send(new Response(false, CONSTANT.SIGN_IN_SUCCESS, { accessToken, role: account.role }))
       })
     } catch (error) {
       res.status(400).send(new Response(true, error.message, null))

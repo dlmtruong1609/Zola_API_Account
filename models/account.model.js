@@ -8,6 +8,9 @@ module.exports = (sequelize, Sequelize) => {
     name: {
       type: Sequelize.STRING
     },
+    avatar: {
+      type: Sequelize.STRING
+    },
     active: {
       type: Sequelize.BOOLEAN
     },
@@ -21,6 +24,15 @@ module.exports = (sequelize, Sequelize) => {
       },
       set: function (val) {
         return this.setDataValue('list_friend', JSON.stringify(val))
+      }
+    },
+    list_friend_request: {
+      type: Sequelize.STRING,
+      get: function () {
+        return JSON.parse(this.getDataValue('list_friend_request'))
+      },
+      set: function (val) {
+        return this.setDataValue('list_friend_request', JSON.stringify(val))
       }
     },
     list_phone_book: {
