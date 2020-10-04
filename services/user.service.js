@@ -44,7 +44,7 @@ const updateProfile = async (req, res) => {
           name: name,
           avatar: avatar
         }).then((userUpdate) => {
-          res.status(200).send(new Response(true, CONSTANT.UPDATE_PROFILE_SUCCESS, null))
+          res.status(200).send(new Response(false, CONSTANT.UPDATE_PROFILE_SUCCESS, null))
         })
       })
     } catch (error) {
@@ -101,7 +101,7 @@ const findAllUserByCurrentPage = (req, res) => {
     })
   } catch (error) {
     // eslint-disable-next-line no-undef
-    res.status(500).send(new Response(false, error, null))
+    res.status(500).send(new Response(true, error, null))
   }
 }
 
@@ -146,11 +146,11 @@ const getALLlistUser = (_req, res) => {
   })
     .then((allUser) => {
       return res.status(200).send(
-        new Response(true, CONSTANT.USER_LIST, allUser)
+        new Response(false, CONSTANT.USER_LIST, allUser)
       )
     })
     .catch((_err) => {
-      res.status(500).send(new Response(false, CONSTANT.SERVER_ERROR, null))
+      res.status(500).send(new Response(true, CONSTANT.SERVER_ERROR, null))
     })
 }
 
@@ -195,7 +195,7 @@ const updateUserByPhone = (req, res) => {
         list_friend: db.sequelize.fn('list_friend', db.sequelize.col('list_friend'), list_friend),
         list_phone_book: db.sequelize.fn('list_phone_book', db.sequelize.col('list_phone_book'), list_phone_book)
       }).then((userUpdate) => {
-        res.status(200).send(new Response(true, CONSTANT.UPDATE_PROFILE_SUCCESS, null))
+        res.status(200).send(new Response(false, CONSTANT.UPDATE_PROFILE_SUCCESS, null))
       })
     })
   } else {
