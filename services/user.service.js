@@ -165,7 +165,7 @@ const findUserByPhone = (req, res) => {
     })
       .then((user) => {
         return res.status(200).send(
-          new Response(true, CONSTANT.FIND_USER_SUCCESS, user)
+          new Response(false, CONSTANT.FIND_USER_SUCCESS, user)
         )
       })
       .catch((_err) => {
@@ -192,7 +192,7 @@ const updateUserByPhone = (req, res) => {
         name: name,
         avatar: avatar,
         role: role,
-        list_friend: db.sequelize.fn('list_friend', db.sequelize.col('list_friend'), list_friend),
+        // list_friend_id: db.sequelize.fn('list_friend_id', db.sequelize.col('list_friend_id'), list_friend),
         list_phone_book: db.sequelize.fn('list_phone_book', db.sequelize.col('list_phone_book'), list_phone_book)
       }).then((userUpdate) => {
         res.status(200).send(new Response(false, CONSTANT.UPDATE_PROFILE_SUCCESS, null))

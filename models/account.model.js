@@ -17,14 +17,8 @@ module.exports = (sequelize, Sequelize) => {
     password: {
       type: Sequelize.STRING
     },
-    list_friend: {
-      type: Sequelize.STRING,
-      get: function () {
-        return JSON.parse(this.getDataValue('list_friend'))
-      },
-      set: function (val) {
-        return this.setDataValue('list_friend', JSON.stringify(val))
-      }
+    list_friend_id: {
+      type: Sequelize.ARRAY(Sequelize.STRING)
     },
     list_friend_request: {
       type: Sequelize.STRING,
