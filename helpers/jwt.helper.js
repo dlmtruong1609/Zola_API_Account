@@ -12,6 +12,7 @@ const generateToken = (user, secretSignature, tokenLife) => {
     const userData = {
       name: user.name,
       phone: user.phone,
+      email: user.email,
       role: user.role
     }
     // Thực hiện ký và tạo token

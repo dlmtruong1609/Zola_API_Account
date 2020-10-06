@@ -16,9 +16,12 @@ module.exports.CODE_VERIFIED = 'Code verified'
 // validator
 module.exports.NAME_IS_REQUIRED = 'Name is required'
 module.exports.PHONE_IS_REQUIRED = 'Phone is required'
+module.exports.EMAIL_IS_REQUIRED = 'Email is required'
 module.exports.NAME_SIZE = 'Username > 6 and < 32 symbols'
 module.exports.IS_PHONE = 'Phone invalid'
+module.exports.IS_EMAIL = 'Email invalid'
 module.exports.PHONE_AVAILABLE = 'Phone already available'
+module.exports.EMAIL_AVAILABLE = 'Email already available'
 module.exports.PASSWORD_IS_REQUIRED = 'Password is required'
 module.exports.PASSWORD_SIZE = 'Password > 6 and < 32 symbols'
 module.exports.PASSWORD_CONFIRM_IS_REQUIRED = 'Password Confirm is required'
@@ -43,3 +46,5 @@ module.exports.SERVER_ERROR = 'Server error, Please try again.'
 
 module.exports.FIND_USER_SUCCESS = 'find user success'
 module.exports.NOT_FOUND_USER = 'not found user'
+
+module.exports.SEND_MAIL_FAILED = 'Has problem when send email'
