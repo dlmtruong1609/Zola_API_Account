@@ -250,14 +250,41 @@ const signupByEmail = async (req, res) => {
  */
 const sendSMSActiveAgain = (req, res) => {
   const phone = req.query.phone
-  Account.findByPk(phone).then(async (_account) => {
-    sendSmsOTP(res, phone, CONSTANT.SEND_SUCCESS)
-  }).catch((err) => {
-    const response = new Response(true, CONSTANT.ERROR_FROM_MONGO, [
-      { msg: err, param: '' }
-    ])
-    res.status(503).send(response)
-  })
+  const email = req.query.email
+  if (phone) {
+    Account.findByPk(phone).then(async (_account) => {
+      sendSmsOTP(res, phone, CONSTANT.SEND_SUCCESS)
+    }).catch((err) => {
+      const response = new Response(true, CONSTANT.SEND_MAIL_FAILED, [
+        { msg: err, param: '' }
+      ])
+      res.status(503).send(response)
+    })
+  } else if (email) {
+    Account.findOne({
+      where: { email: email }
+    }).then(async (_account) => {
+      client.verify.services(process.env.SERVICESID)
+        .verifications
+        .create({
+          channelConfiguration: {
+            from_name: 'Zola Chat'
+          },
+          to: email,
+          channel: 'email'
+        }).then(_verification => res.status(201).send(new Response(false, CONSTANT.SEND_SUCCESS, null)))
+        .catch(_error => {
+          res.status(500).send(new Response(true, CONSTANT.SEND_MAIL_FAILED, null))
+        })
+    }).catch((err) => {
+      const response = new Response(true, CONSTANT.ERROR_FROM_MONGO, [
+        { msg: err, param: '' }
+      ])
+      res.status(503).send(response)
+    })
+  } else {
+    res.status(400).send(new Response(true, 'Please enter email or phone to valid otp', null))
+  }
 }
 
 /**
