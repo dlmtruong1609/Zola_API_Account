@@ -184,18 +184,22 @@ const updateUserByPhone = (req, res) => {
   const name = req.body.name
   const avatar = req.body.avatar
   const role = req.body.role
-  const list_friend = req.body.list_friend
+  const list_friend_id = req.body.list_friend_id
   const list_phone_book = req.body.list_phone_book
+  const list_friend_request = req.body.list_friend_request
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
     Account.findByPk(phone).then(user => {
-      Account.update({
+      user.update({
         name: name,
         avatar: avatar,
         role: role,
-        // list_friend_id: db.sequelize.fn('list_friend_id', db.sequelize.col('list_friend_id'), list_friend),
-        list_phone_book: db.sequelize.fn('list_phone_book', db.sequelize.col('list_phone_book'), list_phone_book)
+        list_friend_id: list_friend_id,
+        list_phone_book: list_phone_book,
+        list_friend_request: list_friend_request
       }).then((userUpdate) => {
         res.status(200).send(new Response(false, CONSTANT.UPDATE_PROFILE_SUCCESS, null))
+      }).catch(err => {
+        res.status(400).send(new Response(true, err, null))
       })
     })
   } else {

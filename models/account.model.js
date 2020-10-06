@@ -21,22 +21,10 @@ module.exports = (sequelize, Sequelize) => {
       type: Sequelize.ARRAY(Sequelize.STRING)
     },
     list_friend_request: {
-      type: Sequelize.STRING,
-      get: function () {
-        return JSON.parse(this.getDataValue('list_friend_request'))
-      },
-      set: function (val) {
-        return this.setDataValue('list_friend_request', JSON.stringify(val))
-      }
+      type: Sequelize.ARRAY(Sequelize.STRING)
     },
     list_phone_book: {
-      type: Sequelize.STRING,
-      get: function () {
-        return JSON.parse(this.getDataValue('list_phone_book'))
-      },
-      set: function (val) {
-        return this.setDataValue('list_phone_book', JSON.stringify(val))
-      }
+      type: Sequelize.ARRAY(Sequelize.STRING)
     },
     role: {
       type: Sequelize.STRING
