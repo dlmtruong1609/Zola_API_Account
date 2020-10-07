@@ -189,6 +189,7 @@ const updateUserByPhone = (req, res) => {
   const name = req.body.name
   const avatar = req.body.avatar
   const role = req.body.role
+  const active = req.body.active
   const list_friend_id = req.body.list_friend_id
   const list_phone_book = req.body.list_phone_book
   const list_friend_request = req.body.list_friend_request
@@ -200,6 +201,7 @@ const updateUserByPhone = (req, res) => {
         name: name,
         avatar: avatar,
         role: role,
+        active: active,
         list_friend_id: list_friend_id,
         list_phone_book: list_phone_book,
         list_friend_request: list_friend_request
