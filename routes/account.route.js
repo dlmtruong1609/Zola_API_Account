@@ -3,7 +3,7 @@ const router = express.Router()
 const accountService = require('../services/account.service')
 const accountValidator = require('../validators/account.validator')
 
-router.post('/api/v0/accounts/active', accountService.accountIsActive)
+router.post('/api/v0/accounts/active', accountValidator.validateActive(), accountService.accountIsActive)
 
 router.post('/api/v0/accounts/signin', accountValidator.validateSignIn(), accountService.signin)
 
@@ -13,8 +13,8 @@ router.post('/api/v0/accounts/passwords/change', accountValidator.validateChange
 
 router.post('/api/v0/accounts/signup', accountValidator.validateSignUp(), accountService.signup)
 
-router.get('/api/v0/accounts/active/send', accountService.sendSMSActiveAgain)
+router.get('/api/v0/accounts/active/send', accountValidator.validateActive(), accountService.sendSMSActiveAgain)
 
-router.post('/api/v0/accounts/code/verify', accountService.verifyCode)
+router.post('/api/v0/accounts/code/verify', accountValidator.validateActive(), accountService.verifyCode)
 
 module.exports = router

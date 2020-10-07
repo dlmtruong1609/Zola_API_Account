@@ -213,6 +213,70 @@ const sendSMSActiveAgain = (req, res) => {
   }
 }
 
+const activeForPhone = (res, phone, code) => {
+  phoneReg.verifyPhoneToken(phone, '+84', code, function (err, response) {
+    if (err) {
+      res.status(500).send(new Response(true, err.message, err.errors))
+    } else {
+      if (response.success) {
+        try {
+          Account.findByPk(phone).then(user => {
+            user.update({
+              active: true
+            }).then(async (user) => {
+              const accessToken = await jwtHelper.generateToken(
+                user,
+                accessTokenSecret,
+                accessTokenLife
+              )
+              const refreshToken = await jwtHelper.generateToken(
+                user,
+                refreshTokenSecret,
+                refreshTokenLife
+              )
+              //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
+              tokenList[refreshToken] = { accessToken, refreshToken }
+              res.status(200).send(new Response(false, CONSTANT.ACTIVE_SUCCESS, { accessToken, refreshToken }))
+            })
+          })
+        } catch (error) {
+          res.status(400).send(new Response(true, error, null))
+        }
+      }
+    }
+  })
+}
+
+const activeForEmail = (res, email, code) => {
+  mailService.client.verify.services(process.env.SERVICESID)
+    .verificationChecks
+    .create({ to: email, code: code })
+    .then(verificationCheck => {
+      Account.findOne({
+        where: { email: email }
+      }).then(user => {
+        user.update({
+          active: true
+        }).then(async (_account) => {
+          const accessToken = await jwtHelper.generateToken(
+            user,
+            accessTokenSecret,
+            accessTokenLife
+          )
+          const refreshToken = await jwtHelper.generateToken(
+            user,
+            refreshTokenSecret,
+            refreshTokenLife
+          )
+          //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
+          tokenList[refreshToken] = { accessToken, refreshToken }
+          res.status(200).send(new Response(false, CONSTANT.ACTIVE_SUCCESS, { accessToken, refreshToken }))
+        })
+      })
+    }).catch(_err => {
+      res.status(400).send(new Response(true, 'Code is used or expired', null))
+    })
+}
 /**
  * This is function set status account to active
  * @param {*} req
@@ -223,69 +287,18 @@ const accountIsActive = async (req, res) => {
   const phone = req.body.phone
   const email = req.body.email
   const code = req.body.code
-  if (phone) {
-    phoneReg.verifyPhoneToken(phone, '+84', code, function (err, response) {
-      if (err) {
-        res.status(500).send(new Response(true, err.message, err.errors))
-      } else {
-        if (response.success) {
-          try {
-            Account.findByPk(phone).then(user => {
-              user.update({
-                active: true
-              }).then(async (user) => {
-                const accessToken = await jwtHelper.generateToken(
-                  user,
-                  accessTokenSecret,
-                  accessTokenLife
-                )
-                const refreshToken = await jwtHelper.generateToken(
-                  user,
-                  refreshTokenSecret,
-                  refreshTokenLife
-                )
-                //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
-                tokenList[refreshToken] = { accessToken, refreshToken }
-                res.status(200).send(new Response(false, CONSTANT.ACTIVE_SUCCESS, { accessToken, refreshToken }))
-              })
-            })
-          } catch (error) {
-            res.status(400).send(new Response(true, error, null))
-          }
-        }
-      }
-    })
-  } else if (email) {
-    mailService.client.verify.services(process.env.SERVICESID)
-      .verificationChecks
-      .create({ to: email, code: code })
-      .then(verificationCheck => {
-        Account.findOne({
-          where: { email: email }
-        }).then(user => {
-          user.update({
-            active: true
-          }).then(async (_account) => {
-            const accessToken = await jwtHelper.generateToken(
-              user,
-              accessTokenSecret,
-              accessTokenLife
-            )
-            const refreshToken = await jwtHelper.generateToken(
-              user,
-              refreshTokenSecret,
-              refreshTokenLife
-            )
-            //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
-            tokenList[refreshToken] = { accessToken, refreshToken }
-            res.status(200).send(new Response(false, CONSTANT.ACTIVE_SUCCESS, { accessToken, refreshToken }))
-          })
-        })
-      }).catch(_err => {
-        res.status(400).send(new Response(true, 'Code is used or expired', null))
-      })
+  const errs = validationResult(req).formatWith(errorFormatter) // format chung
+  if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
+    if (phone) {
+      activeForPhone(res, phone, code)
+    } else if (email) {
+      activeForEmail(res, email, code)
+    } else {
+      res.status(400).send(new Response(true, 'Please enter email or phone to valid otp', null))
+    }
   } else {
-    res.status(400).send(new Response(true, 'Please enter email or phone to valid otp', null))
+    const response = new Response(true, CONSTANT.INVALID_VALUE, errs.array())
+    res.status(400).send(response)
   }
 }
 /**
