@@ -39,7 +39,9 @@ const updateProfile = async (req, res) => {
 
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
     try {
-      Account.findByPk(userDecode.phone).then(user => {
+      Account.findOne({
+        where: { phone: userDecode.phone }
+      }).then(user => {
         user.update({
           name: name,
           avatar: avatar
@@ -159,7 +161,9 @@ const findUserByPhone = (req, res) => {
   const errs = validationResult(req).formatWith(errorFormatter) // format chung
   const phone = req.query.phone
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-    Account.findByPk(phone, {
+    Account.findOne({
+      where: { phone: phone }
+    }, {
       attributes: {
         exclude: ['password']
       }
@@ -189,7 +193,9 @@ const updateUserByPhone = (req, res) => {
   const list_phone_book = req.body.list_phone_book
   const list_friend_request = req.body.list_friend_request
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-    Account.findByPk(phone).then(user => {
+    Account.findOne({
+      where: { phone: phone }
+    }).then(user => {
       user.update({
         name: name,
         avatar: avatar,
