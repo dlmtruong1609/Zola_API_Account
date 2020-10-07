@@ -113,15 +113,16 @@ const sendSmsOTP = async (res, phone, messageSuccess) => {
   })
 }
 
-const signUpByPhone = (res, account, phone) => {
-  Account
-    .create(account)
-    .then(async (_data) => {
-      console.log('account da save')
-      // send sms otp
-      sendSmsOTP(res, phone, CONSTANT.SIGN_UP_SUCCESS)
-    })
-}
+/**
+ * service signup
+ * @param {*} req
+ * @param {*} res
+ * @param {body} email
+ * @param {body} name
+ * @param {body} password
+ * @param {body} passwordConfirm
+ */
+
 /**
  * service signup
  * @param {*} req
@@ -134,8 +135,11 @@ const signUpByPhone = (res, account, phone) => {
 const signup = async (req, res) => {
   // Request validation
   try {
-    const phone = req.body.phone
-    const email = req.body.email
+    const tokenFromClient = req.headers['x-access-token']
+    const decoded = await jwtHelper.verifyToken(tokenFromClient, accessTokenSecret)
+    // Nếu token hợp lệ, lưu thông tin giải mã được vào đối tượng req, dùng cho các xử lý ở phía sau.
+    const phone = decoded.phone
+    const email = decoded.email
     const password = req.body.password
     const name = req.body.name
     console.log(password)
@@ -147,14 +151,30 @@ const signup = async (req, res) => {
           email: email || '',
           name: name,
           password: hash,
-          active: false,
+          active: true,
           list_friend_id: [],
           list_friend_request: [],
           list_phone_book: [],
           role: 'MEMBER',
           createdAt: new Date().getTime()
         }
-        phone ? signUpByPhone(res, account, phone) : signUpByEmail(res, account, email)
+        Account
+          .create(account)
+          .then(async (user) => {
+            const accessToken = await jwtHelper.generateToken(
+              user,
+              accessTokenSecret,
+              accessTokenLife
+            )
+            const refreshToken = await jwtHelper.generateToken(
+              user,
+              refreshTokenSecret,
+              refreshTokenLife
+            )
+            //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
+            tokenList[refreshToken] = { accessToken, refreshToken }
+            res.status(200).send(new Response(false, CONSTANT.ACTIVE_SUCCESS, { accessToken, refreshToken }))
+          })
       })
     } else {
       const response = new Response(true, CONSTANT.INVALID_VALUE, errs.array())
@@ -166,139 +186,68 @@ const signup = async (req, res) => {
 }
 
 /**
- * service signup
- * @param {*} req
- * @param {*} res
- * @param {body} phone
- * @param {body} name
- * @param {body} password
- * @param {body} passwordConfirm
- */
-const signUpByEmail = async (res, account, email) => {
-  Account
-    .create(account)
-    .then(async (_data) => {
-      console.log('account da save')
-      // send email otp
-      mailService.sendOtpEmail(res, email, CONSTANT.SIGN_UP_SUCCESS)
-    })
-}
-
-/**
  * Function to send mail active again
  * @param {*} req
  * @param {*} res
  * @param {body} phone
  */
-const sendSMSActiveAgain = (req, res) => {
+const sendOtpSignUp = async (req, res) => {
   const phone = req.query.phone
   const email = req.query.email
   if (phone) {
-    Account.findByPk(phone).then(async (_account) => {
-      sendSmsOTP(res, phone, CONSTANT.SEND_SUCCESS)
-    }).catch((err) => {
-      const response = new Response(true, CONSTANT.SEND_MAIL_FAILED, [
-        { msg: err, param: '' }
-      ])
-      res.status(503).send(response)
-    })
+    sendSmsOTP(res, phone, CONSTANT.SEND_SUCCESS)
   } else if (email) {
-    Account.findOne({
-      where: { email: email }
-    }).then(async (_account) => {
-      mailService.sendOtpEmail(res, email, CONSTANT.SEND_SUCCESS)
-    })
+    mailService.sendOtpEmail(res, email, CONSTANT.SEND_SUCCESS)
   } else {
     res.status(400).send(new Response(true, 'Please enter email or phone to valid otp', null))
   }
 }
 
-const activeForPhone = (res, phone, code) => {
-  phoneReg.verifyPhoneToken(phone, '+84', code, function (err, response) {
-    if (err) {
-      res.status(500).send(new Response(true, err.message, err.errors))
-    } else {
-      if (response.success) {
-        try {
-          Account.findByPk(phone).then(user => {
-            user.update({
-              active: true
-            }).then(async (user) => {
-              const accessToken = await jwtHelper.generateToken(
-                user,
-                accessTokenSecret,
-                accessTokenLife
-              )
-              const refreshToken = await jwtHelper.generateToken(
-                user,
-                refreshTokenSecret,
-                refreshTokenLife
-              )
-              //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
-              tokenList[refreshToken] = { accessToken, refreshToken }
-              res.status(200).send(new Response(false, CONSTANT.ACTIVE_SUCCESS, { accessToken, refreshToken }))
-            })
-          })
-        } catch (error) {
-          res.status(400).send(new Response(true, error, null))
-        }
-      }
-    }
-  })
-}
-
-const activeForEmail = (res, email, code) => {
-  mailService.client.verify.services(process.env.SERVICESID)
-    .verificationChecks
-    .create({ to: email, code: code })
-    .then(verificationCheck => {
-      Account.findOne({
-        where: { email: email }
-      }).then(user => {
-        user.update({
-          active: true
-        }).then(async (_account) => {
-          const accessToken = await jwtHelper.generateToken(
-            user,
-            accessTokenSecret,
-            accessTokenLife
-          )
-          const refreshToken = await jwtHelper.generateToken(
-            user,
-            refreshTokenSecret,
-            refreshTokenLife
-          )
-          //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
-          tokenList[refreshToken] = { accessToken, refreshToken }
-          res.status(200).send(new Response(false, CONSTANT.ACTIVE_SUCCESS, { accessToken, refreshToken }))
-        })
-      })
-    }).catch(_err => {
-      res.status(400).send(new Response(true, 'Code is used or expired', null))
-    })
-}
-/**
- * This is function set status account to active
- * @param {*} req
- * @param {*} res
- * @param {headers} x-access-token
- */
-const accountIsActive = async (req, res) => {
+const verifyOtpSignUp = async (req, res) => {
   const phone = req.body.phone
   const email = req.body.email
   const code = req.body.code
-  const errs = validationResult(req).formatWith(errorFormatter) // format chung
-  if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-    if (phone) {
-      activeForPhone(res, phone, code)
-    } else if (email) {
-      activeForEmail(res, email, code)
-    } else {
-      res.status(400).send(new Response(true, 'Please enter email or phone to valid otp', null))
-    }
+  const account = {
+    phone: phone || '',
+    email: email || ''
+  }
+  const accessToken = await jwtHelper.generateToken(
+    account,
+    accessTokenSecret,
+    accessTokenLife
+  )
+
+  const refreshToken = await jwtHelper.generateToken(
+    account,
+    refreshTokenSecret,
+    refreshTokenLife
+  )
+  //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
+  tokenList[refreshToken] = { accessToken, refreshToken }
+  if (phone) {
+    phoneReg.verifyPhoneToken(phone, '+84', code, async function (err, response) {
+      if (err) {
+        res.status(500).send(new Response(true, err.message, err.errors))
+      } else {
+        if (response.success) {
+          res.status(200).send(new Response(false, CONSTANT.CODE_VERIFIED, { accessToken, refreshToken })
+          )
+        }
+      }
+    }).catch(_err => {
+      res.status(400).send(new Response(true, 'Code is used or expired', null))
+    })
+  } else if (email) {
+    mailService.client.verify.services(process.env.SERVICESID)
+      .verificationChecks
+      .create({ to: email, code: code })
+      .then(async verificationCheck => {
+        res.status(200).send(new Response(false, CONSTANT.CODE_VERIFIED, { accessToken, refreshToken }))
+      }).catch(_err => {
+        res.status(400).send(new Response(true, 'Code is used or expired', null))
+      })
   } else {
-    const response = new Response(true, CONSTANT.INVALID_VALUE, errs.array())
-    res.status(400).send(response)
+    res.status(400).send(new Response(true, 'Please enter email or phone to valid otp', null))
   }
 }
 /**
@@ -307,7 +256,7 @@ const accountIsActive = async (req, res) => {
  * @param {*} res
  * @param {headers} x-access-token
  */
-const verifyCode = async (req, res) => {
+const verifyCodeChangePassword = async (req, res) => {
   const phone = req.body.phone
   const code = req.body.code
   const email = req.body.email
@@ -473,9 +422,9 @@ const changePassword = async (req, res) => {
 module.exports = {
   signin: signin,
   signup: signup,
-  sendSMSActiveAgain: sendSMSActiveAgain,
+  sendOtpSignUp: sendOtpSignUp,
   forgotPassword: forgotPassword,
   changePassword: changePassword,
-  accountIsActive: accountIsActive,
-  verifyCode: verifyCode
+  verifyCodeChangePassword: verifyCodeChangePassword,
+  verifyOtpSignUp: verifyOtpSignUp
 }
