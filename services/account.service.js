@@ -233,8 +233,20 @@ const accountIsActive = async (req, res) => {
             Account.findByPk(phone).then(user => {
               user.update({
                 active: true
-              }).then(async (_account) => {
-                res.status(200).send(new Response(false, CONSTANT.ACTIVE_SUCCESS, null))
+              }).then(async (user) => {
+                const accessToken = await jwtHelper.generateToken(
+                  user,
+                  accessTokenSecret,
+                  accessTokenLife
+                )
+                const refreshToken = await jwtHelper.generateToken(
+                  user,
+                  refreshTokenSecret,
+                  refreshTokenLife
+                )
+                //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
+                tokenList[refreshToken] = { accessToken, refreshToken }
+                res.status(200).send(new Response(false, CONSTANT.ACTIVE_SUCCESS, { accessToken, refreshToken }))
               })
             })
           } catch (error) {
@@ -254,7 +266,19 @@ const accountIsActive = async (req, res) => {
           user.update({
             active: true
           }).then(async (_account) => {
-            res.status(200).send(new Response(false, CONSTANT.ACTIVE_SUCCESS, null))
+            const accessToken = await jwtHelper.generateToken(
+              user,
+              accessTokenSecret,
+              accessTokenLife
+            )
+            const refreshToken = await jwtHelper.generateToken(
+              user,
+              refreshTokenSecret,
+              refreshTokenLife
+            )
+            //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
+            tokenList[refreshToken] = { accessToken, refreshToken }
+            res.status(200).send(new Response(false, CONSTANT.ACTIVE_SUCCESS, { accessToken, refreshToken }))
           })
         })
       }).catch(_err => {

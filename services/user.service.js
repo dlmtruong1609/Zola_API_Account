@@ -150,6 +150,7 @@ const getALLlistUser = (_req, res) => {
       )
     })
     .catch((_err) => {
+      console.log(_err)
       res.status(500).send(new Response(true, CONSTANT.SERVER_ERROR, null))
     })
 }
