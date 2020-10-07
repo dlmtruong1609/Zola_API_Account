@@ -7,7 +7,7 @@ router.put('/api/v0/users/profile/update', userValidator.validateUpdateProfile()
 router.get('/api/v0/users/search', userService.search)
 router.get('/api/v0/users/list', userService.findAllUserByCurrentPage)
 router.post('/api/v0/users/add', userValidator.validateAddUser(), userService.addUser)
-router.put('/api/v0/users/update', userValidator.valiteUpdateUserByPhone(), userService.updateUserByPhone)
+router.put('/api/v0/users/update', userValidator.valiteUpdateUserByPhone(), userService.update)
 router.get('/api/v0/users', userService.getALLlistUser)
 router.get('/api/v0/users/detail', userValidator.validateSearchUserByPhone(), userService.findUserByPhone)
 

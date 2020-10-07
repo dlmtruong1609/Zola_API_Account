@@ -62,14 +62,32 @@ const validateSearchUserByPhone = () => {
 
 const valiteUpdateUserByPhone = () => {
   return [
-    check('phone', CONSTANT.PHONE_IS_REQUIRED).not().isEmpty(),
-    check('phone', CONSTANT.PHONE_HAS_LENGHT_10).isLength({ min: 10, max: 10 }),
+    check('phone').custom((value, { req }) => {
+      const phone = req.query.phone
+      const email = req.query.email
+      if (email || phone) {
+        return true
+      }
+      throw new Error('Please enter phone or email')
+    }),
+    check('phone', CONSTANT.PHONE_IS_REQUIRED).optional({ checkFalsy: false }).not().isEmpty(),
+    check('phone', CONSTANT.PHONE_HAS_LENGHT_10).optional({ checkFalsy: false }).isLength({ min: 10, max: 10 }),
     // check("phone", CONSTANT.IS_PHONE).matches(/((09|03|07|08|05)+([0-9]{8})\b)/g),
     check('name', CONSTANT.NAME_SIZE).isLength({ min: 6, max: 32 }),
     check('role', CONSTANT.ROLE_INCORRECT).matches(/MEMBER|ADMIN/),
-    check('phone').custom((value, { req }) => {
+    check('phone').optional({ checkFalsy: false }).custom((value, { req }) => {
       return Account.findOne({
         where: { phone: value }
+      }).then((account) => {
+        if (!account) {
+          return Promise.reject(CONSTANT.USER_NOT_FOUND)
+        }
+      })
+    }),
+    check('email', CONSTANT.IS_EMAIL).optional({ checkFalsy: false }).isEmail(),
+    check('email').optional({ checkFalsy: false }).custom((value, { req }) => {
+      return Account.findOne({
+        where: { email: value }
       }).then((account) => {
         if (!account) {
           return Promise.reject(CONSTANT.USER_NOT_FOUND)
