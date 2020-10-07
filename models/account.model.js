@@ -2,8 +2,7 @@
 module.exports = (sequelize, Sequelize) => {
   const Account = sequelize.define('Account', {
     phone: {
-      type: Sequelize.STRING,
-      primaryKey: true
+      type: Sequelize.STRING
     },
     email: {
       type: Sequelize.STRING

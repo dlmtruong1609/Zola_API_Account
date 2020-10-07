@@ -8,9 +8,19 @@ const validateSignUp = () => {
     check('name', CONSTANT.NAME_IS_REQUIRED).not().isEmpty(), // validate để trống trường email sử dụng hàm notEmpty()
     check('name', CONSTANT.NAME_SIZE).isLength({ min: 6, max: 32 }),
     check('phone', CONSTANT.PHONE_IS_REQUIRED).optional({ checkFalsy: true }).not().isEmpty(),
+    check('phone').custom((value, { req }) => {
+      const phone = req.body.phone
+      const email = req.body.email
+      if (email || phone) {
+        return true
+      }
+      throw new Error('Please enter phone or email')
+    }),
     check('phone', CONSTANT.IS_PHONE).optional({ checkFalsy: true }).matches(/((09|03|07|08|05)+([0-9]{8})\b)/),
     check('phone').optional({ checkFalsy: true }).custom((value, { req }) => {
-      return Account.findByPk(value).then((account) => {
+      return Account.findOne({
+        where: { phone: value }
+      }).then((account) => {
         if (account) {
           return Promise.reject(CONSTANT.PHONE_AVAILABLE)
         }
@@ -42,7 +52,9 @@ const validateSignUp = () => {
 const validateSignIn = () => {
   return [
     check('phone').optional({ checkFalsy: true }).custom((value, { req }) => {
-      return Account.findByPk(value).then((account) => {
+      return Account.findOne({
+        where: { phone: value }
+      }).then((account) => {
         if (!account) {
           return Promise.reject(CONSTANT.USER_NOT_FOUND)
         }
@@ -58,7 +70,9 @@ const validateSignIn = () => {
       })
     }),
     check('phone').optional({ checkFalsy: true }).custom((value, { req }) => {
-      return Account.findByPk(value).then((account) => {
+      return Account.findOne({
+        where: { phone: value }
+      }).then((account) => {
         if (account && account.active === false) {
           return Promise.reject(CONSTANT.ACCCOUNT_IS_NOT_ACTIVE)
         }
@@ -78,7 +92,9 @@ const validateSignIn = () => {
       const phone = req.body.phone
       const email = req.body.email
       if (phone) {
-        return Account.findByPk(req.body.phone).then((account) => {
+        return Account.findOne({
+          where: { phone: phone }
+        }).then((account) => {
           if ((account && account.password === undefined) || (account && bcrypt.compareSync(value, account.password) === false)) {
             return Promise.reject(CONSTANT.PASSWORD_INCORRECT)
           }
@@ -98,9 +114,19 @@ const validateSignIn = () => {
 
 const validateForgotPassword = () => {
   return [
+    check('phone').custom((value, { req }) => {
+      const phone = req.query.phone
+      const email = req.query.email
+      if (email || phone) {
+        return true
+      }
+      throw new Error('Please enter phone or email')
+    }),
     check('phone', CONSTANT.IS_PHONE).optional({ checkFalsy: true }).matches(/((09|03|07|08|05)+([0-9]{8})\b)/),
     check('phone').optional({ checkFalsy: true }).custom((value, { req }) => {
-      return Account.findByPk(value).then((account) => {
+      return Account.findOne({
+        where: { phone: value }
+      }).then((account) => {
         if (!account) {
           return Promise.reject(CONSTANT.USER_NOT_FOUND)
         }
@@ -133,9 +159,19 @@ const validateChangePassword = () => {
 
 const validateActive = () => {
   return [
+    check('phone').custom((value, { req }) => {
+      const phone = req.body.phone
+      const email = req.body.email
+      if (email || phone) {
+        return true
+      }
+      throw new Error('Please enter phone or email')
+    }),
     check('phone', CONSTANT.IS_PHONE).optional({ checkFalsy: true }).matches(/((09|03|07|08|05)+([0-9]{8})\b)/),
     check('phone').optional({ checkFalsy: true }).custom((value, { req }) => {
-      return Account.findByPk(value).then((account) => {
+      return Account.findOne({
+        where: { phone: value }
+      }).then((account) => {
         if (!account) {
           return Promise.reject(CONSTANT.USER_NOT_FOUND)
         }

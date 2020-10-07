@@ -30,7 +30,9 @@ const errorFormatter = ({ location, msg, param, value, nestedErrors }) => {
   }
 }
 const signinByPhone = async (res, phone) => {
-  await Account.findByPk(phone).then(async (account) => {
+  await Account.findOne({
+    where: { phone: phone }
+  }).then(async (account) => {
     const accessToken = await jwtHelper.generateToken(
       account,
       accessTokenSecret,
@@ -138,8 +140,8 @@ const signup = async (req, res) => {
     const tokenFromClient = req.headers['x-access-token']
     const decoded = await jwtHelper.verifyToken(tokenFromClient, accessTokenSecret)
     // Nếu token hợp lệ, lưu thông tin giải mã được vào đối tượng req, dùng cho các xử lý ở phía sau.
-    const phone = decoded.phone
-    const email = decoded.email
+    const phone = decoded.data.phone
+    const email = decoded.data.email
     const password = req.body.password
     const name = req.body.name
     console.log(password)
@@ -147,7 +149,7 @@ const signup = async (req, res) => {
     if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
       bcrypt.hash(password, 10).then((hash) => {
         const account = {
-          phone: phone || '00',
+          phone: phone || '',
           email: email || '',
           name: name,
           password: hash,
@@ -174,6 +176,8 @@ const signup = async (req, res) => {
             //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
             tokenList[refreshToken] = { accessToken, refreshToken }
             res.status(200).send(new Response(false, CONSTANT.ACTIVE_SUCCESS, { accessToken, refreshToken }))
+          }).catch(err => {
+            console.log(err)
           })
       })
     } else {
@@ -266,7 +270,9 @@ const verifyCodeChangePassword = async (req, res) => {
         res.status(500).send(new Response(true, err.message, err.errors))
       } else {
         if (response.success) {
-          Account.findByPk(phone).then(async (account) => {
+          Account.findOne({
+            where: { phone: phone }
+          }).then(async (account) => {
             const accessToken = await jwtHelper.generateToken(
               account,
               accessTokenSecret,
@@ -332,7 +338,9 @@ const forgotPassword = async (req, res) => {
   if (phone) {
     const errs = validationResult(req).formatWith(errorFormatter) // format chung
     if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-      Account.findByPk(phone).then(async (account) => {
+      Account.findOne({
+        where: { phone: phone }
+      }).then(async (account) => {
         if (account) {
           sendSmsOTP(res, phone, CONSTANT.SEND_SUCCESS)
         } else {
@@ -381,7 +389,9 @@ const changePassword = async (req, res) => {
     if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
       bcrypt.hash(newPassword, 10).then((hash) => {
         if (phone) {
-          Account.findByPk(phone).then(user => {
+          Account.findOne({
+            where: { phone: phone }
+          }).then(user => {
             user.update({
               password: hash
             }).then(async (account) => {
