@@ -5,17 +5,13 @@ const accountValidator = require('../validators/account.validator')
 
 router.post('/api/v0/accounts/active', accountService.accountIsActive)
 
-router.post('/api/v0/accounts/signin/phone', accountValidator.validateSignInByPhone(), accountService.signinByPhone)
-
-router.post('/api/v0/accounts/signin/email', accountValidator.validateSignInByEmail(), accountService.signinByEmail)
+router.post('/api/v0/accounts/signin', accountValidator.validateSignIn(), accountService.signin)
 
 router.get('/api/v0/accounts/passwords/forgot', accountValidator.validateForgotPassword(), accountService.forgotPassword)
 
 router.post('/api/v0/accounts/passwords/change', accountValidator.validateChangePassword(), accountService.changePassword)
 
-router.post('/api/v0/accounts/signup/phone', accountValidator.validateSignUpByPhone(), accountService.signupByPhone)
-
-router.post('/api/v0/accounts/signup/email', accountValidator.validateSignUpByEmail(), accountService.signupByEmail)
+router.post('/api/v0/accounts/signup', accountValidator.validateSignUp(), accountService.signup)
 
 router.get('/api/v0/accounts/active/send', accountService.sendSMSActiveAgain)
 

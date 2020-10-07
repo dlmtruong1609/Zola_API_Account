@@ -7,9 +7,8 @@ const CONSTANT = require('../utils/account.constants')
 require('dotenv').config()
 const bcrypt = require('bcryptjs')
 const phoneReg = require('./phone_verification')(process.env.API_KEY)
-const accountSid = process.env.ACOUNTSID
-const authToken = process.env.AUTH_TOKEN
-const client = require('twilio')(accountSid, authToken)
+const mailService = require('./mail.service')
+
 // Biến cục bộ trên server này sẽ lưu trữ tạm danh sách token
 // Nen lưu vào Redis hoặc DB
 const tokenList = {}
@@ -30,6 +29,24 @@ const errorFormatter = ({ location, msg, param, value, nestedErrors }) => {
     param: param
   }
 }
+const signinByPhone = async (res, phone) => {
+  await Account.findByPk(phone).then(async (account) => {
+    const accessToken = await jwtHelper.generateToken(
+      account,
+      accessTokenSecret,
+      accessTokenLife
+    )
+
+    const refreshToken = await jwtHelper.generateToken(
+      account,
+      refreshTokenSecret,
+      refreshTokenLife
+    )
+    //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
+    tokenList[refreshToken] = { accessToken, refreshToken }
+    res.status(200).send(new Response(false, CONSTANT.SIGN_IN_SUCCESS, { accessToken, role: account.role }))
+  })
+}
 /**
  * service sign
  * @param {*} req
@@ -37,32 +54,13 @@ const errorFormatter = ({ location, msg, param, value, nestedErrors }) => {
  * @param {body} phone
  * @param {body} password
  */
-const signinByPhone = async (req, res) => {
+const signin = async (req, res) => {
   const errs = validationResult(req).formatWith(errorFormatter) // format chung
   console.log(req.body.password)
   const phone = req.body.phone
+  const email = req.body.email
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-    try {
-      Account.findByPk(phone).then(async (account) => {
-        const accessToken = await jwtHelper.generateToken(
-          account,
-          accessTokenSecret,
-          accessTokenLife
-        )
-
-        const refreshToken = await jwtHelper.generateToken(
-          account,
-          refreshTokenSecret,
-          refreshTokenLife
-        )
-        //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
-        tokenList[refreshToken] = { accessToken, refreshToken }
-
-        res.status(200).send(new Response(false, CONSTANT.SIGN_IN_SUCCESS, { accessToken, role: account.role }))
-      })
-    } catch (error) {
-      res.status(400).send(new Response(true, error.message, null))
-    }
+    phone ? signinByPhone(res, phone) : signinByEmail(res, email)
   } else {
     console.log('phone: ' + phone)
     const response = new Response(true, CONSTANT.INVALID_VALUE, errs.array())
@@ -76,37 +74,25 @@ const signinByPhone = async (req, res) => {
  * @param {body} phone
  * @param {body} password
  */
-const signinByEmail = async (req, res) => {
-  const errs = validationResult(req).formatWith(errorFormatter) // format chung
-  console.log(req.body.password)
-  const email = req.body.email
-  if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-    try {
-      Account.findOne({
-        where: { email: email }
-      }).then(async (account) => {
-        const accessToken = await jwtHelper.generateToken(
-          account,
-          accessTokenSecret,
-          accessTokenLife
-        )
+const signinByEmail = async (res, email) => {
+  Account.findOne({
+    where: { email: email }
+  }).then(async (account) => {
+    const accessToken = await jwtHelper.generateToken(
+      account,
+      accessTokenSecret,
+      accessTokenLife
+    )
 
-        const refreshToken = await jwtHelper.generateToken(
-          account,
-          refreshTokenSecret,
-          refreshTokenLife
-        )
-        //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
-        tokenList[refreshToken] = { accessToken, refreshToken }
-        res.status(200).send(new Response(false, CONSTANT.SIGN_IN_SUCCESS, { accessToken, role: account.role }))
-      })
-    } catch (error) {
-      res.status(400).send(new Response(true, error.message, null))
-    }
-  } else {
-    const response = new Response(true, CONSTANT.INVALID_VALUE, errs.array())
-    res.status(400).send(response)
-  }
+    const refreshToken = await jwtHelper.generateToken(
+      account,
+      refreshTokenSecret,
+      refreshTokenLife
+    )
+    //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
+    tokenList[refreshToken] = { accessToken, refreshToken }
+    res.status(200).send(new Response(false, CONSTANT.SIGN_IN_SUCCESS, { accessToken, role: account.role }))
+  })
 }
 /**
  * service signup
@@ -127,6 +113,15 @@ const sendSmsOTP = async (res, phone, messageSuccess) => {
   })
 }
 
+const signUpByPhone = (res, account, phone) => {
+  Account
+    .create(account)
+    .then(async (_data) => {
+      console.log('account da save')
+      // send sms otp
+      sendSmsOTP(res, phone, CONSTANT.SIGN_UP_SUCCESS)
+    })
+}
 /**
  * service signup
  * @param {*} req
@@ -136,10 +131,11 @@ const sendSmsOTP = async (res, phone, messageSuccess) => {
  * @param {body} password
  * @param {body} passwordConfirm
  */
-const signupByPhone = async (req, res) => {
+const signup = async (req, res) => {
   // Request validation
   try {
     const phone = req.body.phone
+    const email = req.body.email
     const password = req.body.password
     const name = req.body.name
     console.log(password)
@@ -147,8 +143,8 @@ const signupByPhone = async (req, res) => {
     if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
       bcrypt.hash(password, 10).then((hash) => {
         const account = {
-          phone: phone,
-          email: '',
+          phone: phone || '00',
+          email: email || '',
           name: name,
           password: hash,
           active: false,
@@ -158,20 +154,7 @@ const signupByPhone = async (req, res) => {
           role: 'MEMBER',
           createdAt: new Date().getTime()
         }
-        console.log('account chua save')
-        Account
-          .create(account)
-          .then(async (_data) => {
-            console.log('account da save')
-            // send sms otp
-            sendSmsOTP(res, phone, CONSTANT.SIGN_UP_SUCCESS)
-          })
-          .catch((err) => {
-            const response = new Response(true, CONSTANT.ERROR_FROM_MONGO, [
-              { msg: err, param: '' }
-            ])
-            res.status(503).send(response)
-          })
+        phone ? signUpByPhone(res, account, phone) : signUpByEmail(res, account, email)
       })
     } else {
       const response = new Response(true, CONSTANT.INVALID_VALUE, errs.array())
@@ -191,55 +174,14 @@ const signupByPhone = async (req, res) => {
  * @param {body} password
  * @param {body} passwordConfirm
  */
-const signupByEmail = async (req, res) => {
-  // Request validation
-  try {
-    const email = req.body.email
-    const password = req.body.password
-    const name = req.body.name
-    console.log(password)
-    const errs = validationResult(req).formatWith(errorFormatter) // format chung
-    if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-      bcrypt.hash(password, 10).then((hash) => {
-        const account = {
-          email: email,
-          phone: '00++',
-          name: name,
-          password: hash,
-          active: false,
-          list_friend_id: [],
-          list_friend_request: [],
-          list_phone_book: [],
-          role: 'MEMBER',
-          createdAt: new Date().getTime()
-        }
-        console.log('account chua save')
-        Account
-          .create(account)
-          .then(async (_data) => {
-            console.log('account da save')
-            // send email otp
-            client.verify.services(process.env.SERVICESID)
-              .verifications
-              .create({
-                channelConfiguration: {
-                  from_name: 'Zola Chat'
-                },
-                to: email,
-                channel: 'email'
-              }).then(_verification => res.status(201).send(new Response(false, CONSTANT.SIGN_UP_SUCCESS, null)))
-              .catch(_error => {
-                res.status(500).send(new Response(true, CONSTANT.SEND_MAIL_FAILED, null))
-              })
-          })
-      })
-    } else {
-      const response = new Response(true, CONSTANT.INVALID_VALUE, errs.array())
-      res.send(response)
-    }
-  } catch (error) {
-    res.status(500).send(new Response(true, error, null))
-  }
+const signUpByEmail = async (res, account, email) => {
+  Account
+    .create(account)
+    .then(async (_data) => {
+      console.log('account da save')
+      // send email otp
+      mailService.sendOtpEmail(res, email, CONSTANT.SIGN_UP_SUCCESS)
+    })
 }
 
 /**
@@ -264,23 +206,7 @@ const sendSMSActiveAgain = (req, res) => {
     Account.findOne({
       where: { email: email }
     }).then(async (_account) => {
-      client.verify.services(process.env.SERVICESID)
-        .verifications
-        .create({
-          channelConfiguration: {
-            from_name: 'Zola Chat'
-          },
-          to: email,
-          channel: 'email'
-        }).then(_verification => res.status(201).send(new Response(false, CONSTANT.SEND_SUCCESS, null)))
-        .catch(_error => {
-          res.status(500).send(new Response(true, CONSTANT.SEND_MAIL_FAILED, null))
-        })
-    }).catch((err) => {
-      const response = new Response(true, CONSTANT.ERROR_FROM_MONGO, [
-        { msg: err, param: '' }
-      ])
-      res.status(503).send(response)
+      mailService.sendOtpEmail(res, email, CONSTANT.SEND_SUCCESS)
     })
   } else {
     res.status(400).send(new Response(true, 'Please enter email or phone to valid otp', null))
@@ -307,8 +233,6 @@ const accountIsActive = async (req, res) => {
             Account.findByPk(phone).then(user => {
               user.update({
                 active: true
-              }, {
-                phone: phone
               }).then(async (_account) => {
                 res.status(200).send(new Response(false, CONSTANT.ACTIVE_SUCCESS, null))
               })
@@ -320,7 +244,7 @@ const accountIsActive = async (req, res) => {
       }
     })
   } else if (email) {
-    client.verify.services(process.env.SERVICESID)
+    mailService.client.verify.services(process.env.SERVICESID)
       .verificationChecks
       .create({ to: email, code: code })
       .then(verificationCheck => {
@@ -329,8 +253,6 @@ const accountIsActive = async (req, res) => {
         }).then(user => {
           user.update({
             active: true
-          }, {
-            phone: phone
           }).then(async (_account) => {
             res.status(200).send(new Response(false, CONSTANT.ACTIVE_SUCCESS, null))
           })
@@ -382,7 +304,7 @@ const verifyCode = async (req, res) => {
       }
     })
   } else if (email) {
-    client.verify.services(process.env.SERVICESID)
+    mailService.client.verify.services(process.env.SERVICESID)
       .verificationChecks
       .create({ to: email, code: code })
       .then(verificationCheck => {
@@ -440,18 +362,7 @@ const forgotPassword = async (req, res) => {
       where: { email: email }
     }).then(account => {
       if (account) {
-        client.verify.services(process.env.SERVICESID)
-          .verifications
-          .create({
-            channelConfiguration: {
-              from_name: 'Zola Chat'
-            },
-            to: email,
-            channel: 'email'
-          }).then(_verification => res.status(201).send(new Response(false, CONSTANT.SIGN_UP_SUCCESS, null)))
-          .catch(_error => {
-            res.status(500).send(new Response(true, CONSTANT.SEND_MAIL_FAILED, null))
-          })
+        mailService.sendOtpEmail(res, email, CONSTANT.SEND_SUCCESS)
       } else {
         res.status(404).send(new Response(true, CONSTANT.USER_NOT_FOUND, null))
       }
@@ -523,10 +434,8 @@ const changePassword = async (req, res) => {
 }
 
 module.exports = {
-  signinByPhone: signinByPhone,
-  signinByEmail: signinByEmail,
-  signupByPhone: signupByPhone,
-  signupByEmail: signupByEmail,
+  signin: signin,
+  signup: signup,
   sendSMSActiveAgain: sendSMSActiveAgain,
   forgotPassword: forgotPassword,
   changePassword: changePassword,

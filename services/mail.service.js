@@ -1,47 +1,25 @@
-const nodemailer = require('nodemailer')
 require('dotenv').config()
+const accountSid = process.env.ACOUNTSID
+const authToken = process.env.AUTH_TOKEN
+const client = require('twilio')(accountSid, authToken)
+const CONSTANT = require('../utils/account.constants')
+const Response = require('../utils/response')
 
-/**
- * This is variable config mail
- */
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  secure: true,
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL,
-    pass: process.env.PASS
-  }
-})
-/**
- * This is function send token for feature forgot password
- * @param {*} email
- * @param {*} accessToken
- */
-const sendTokenForgotPassword = (email, accessToken) => {
-  return {
-    from: process.env.EMAIL,
-    to: email,
-    subject: 'Realestate - Forgot password',
-    text: 'Link reset password: https://bds-vercal-app.vercel.app/changePassword/' + accessToken
-  }
+const sendOtpEmail = (res, email, messageSuccess) => {
+  client.verify.services(process.env.SERVICESID)
+    .verifications
+    .create({
+      channelConfiguration: {
+        from_name: 'Zola Chat'
+      },
+      to: email,
+      channel: 'email'
+    }).then(_verification => res.status(201).send(new Response(false, messageSuccess, null)))
+    .catch(_error => {
+      res.status(500).send(new Response(true, CONSTANT.SEND_MAIL_FAILED, null))
+    })
 }
-/**
- * This is function send token authorize account
- * @param {*} req
- * @param {*} res
- */
-const sendTokenAuthorizeAccount = (email, accessToken) => {
-  return {
-    from: process.env.EMAIL,
-    to: email,
-    subject: 'Realestate - Active account',
-    text: 'Link active here: https://bds-vercal-app.vercel.app/active/' + accessToken
-  }
-}
-
 module.exports = {
-  transporter: transporter,
-  sendTokenForgotPassword: sendTokenForgotPassword,
-  sendTokenAuthorizeAccount: sendTokenAuthorizeAccount
+  sendOtpEmail: sendOtpEmail,
+  client: client
 }
