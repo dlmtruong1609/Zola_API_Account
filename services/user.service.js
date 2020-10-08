@@ -153,34 +153,70 @@ const getALLlistUser = (_req, res) => {
     })
     .catch((_err) => {
       console.log(_err)
-      res.status(500).send(new Response(true, CONSTANT.SERVER_ERROR, null))
+      return res.status(500).send(new Response(true, CONSTANT.SERVER_ERROR, null))
     })
 }
 
-const findUserByPhone = (req, res) => {
+const find = (req, res) => {
   const errs = validationResult(req).formatWith(errorFormatter) // format chung
   const phone = req.query.phone
+  const id = req.query.id
+  const email = req.query.email
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-    Account.findOne({
-      where: { phone: phone }
-    }, {
-      attributes: {
-        exclude: ['password']
-      }
-    })
-      .then((user) => {
-        return res.status(200).send(
-          new Response(false, CONSTANT.FIND_USER_SUCCESS, user)
-        )
-      })
-      .catch((_err) => {
-        res.status(500).send(new Response(false, CONSTANT.SERVER_ERROR, null))
-      })
+    if (email) {
+      findUserByEmail(res, email)
+    } else if (phone) {
+      findUserByPhone(res, phone)
+    } else {
+      findUserById(res, id)
+    }
   } else {
     const response = new Response(true, CONSTANT.INVALID_VALUE, errs.array())
 
     res.status(400).send(response)
   }
+}
+
+const findUserByPhone = (res, phone) => {
+  Account.findOne({
+    where: { phone: phone }
+  }, {
+    attributes: {
+      exclude: ['password']
+    }
+  }).then((user) => {
+    return res.status(200).send(
+      new Response(false, CONSTANT.FIND_USER_SUCCESS, user)
+    )
+  }).catch((_err) => {
+    return res.status(500).send(new Response(true, CONSTANT.SERVER_ERROR, null))
+  })
+}
+
+const findUserByEmail = (res, email) => {
+  Account.findOne({
+    where: { email: email }
+  }, {
+    attributes: {
+      exclude: ['password']
+    }
+  }).then((user) => {
+    return res.status(200).send(
+      new Response(false, CONSTANT.FIND_USER_SUCCESS, user)
+    )
+  }).catch((_err) => {
+    return res.status(500).send(new Response(true, CONSTANT.SERVER_ERROR, null))
+  })
+}
+
+const findUserById = (res, id) => {
+  Account.findByPk(id).then((user) => {
+    return res.status(200).send(
+      new Response(false, CONSTANT.FIND_USER_SUCCESS, user)
+    )
+  }).catch((_err) => {
+    return res.status(500).send(new Response(true, CONSTANT.SERVER_ERROR, null))
+  })
 }
 
 const update = (req, res) => {
@@ -226,6 +262,6 @@ module.exports = {
   findAllUserByCurrentPage: findAllUserByCurrentPage,
   addUser: addUser,
   getALLlistUser: getALLlistUser,
-  findUserByPhone: findUserByPhone,
+  find: find,
   update: update
 }
