@@ -19,15 +19,6 @@ module.exports = (sequelize, Sequelize) => {
     password: {
       type: Sequelize.STRING
     },
-    list_friend_id: {
-      type: Sequelize.ARRAY(Sequelize.STRING)
-    },
-    list_friend_request: {
-      type: Sequelize.ARRAY(Sequelize.STRING)
-    },
-    list_phone_book: {
-      type: Sequelize.ARRAY(Sequelize.STRING)
-    },
     role: {
       type: Sequelize.STRING
     },

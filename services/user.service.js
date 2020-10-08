@@ -182,71 +182,37 @@ const findUserByPhone = (req, res) => {
     res.status(400).send(response)
   }
 }
-const updateUserByPhone = (res, user) => {
-  Account.findOne({
-    where: { phone: user.phone }
-  }).then(userDB => {
-    userDB.update({
-      name: user.name,
-      avatar: user.avatar,
-      role: user.role,
-      active: user.active,
-      list_friend_id: user.list_friend_id,
-      list_phone_book: user.list_phone_book,
-      list_friend_request: user.list_friend_request
-    }).then((userUpdate) => {
-      res.status(200).send(new Response(false, CONSTANT.UPDATE_PROFILE_SUCCESS, null))
-    }).catch(err => {
-      res.status(400).send(new Response(true, err, null))
-    })
-  })
-}
-
-const updateUserByEmail = (res, user) => {
-  Account.findOne({
-    where: { email: user.email }
-  }).then(userDB => {
-    userDB.update({
-      name: user.name,
-      avatar: user.avatar,
-      role: user.role,
-      active: user.active,
-      list_friend_id: user.list_friend_id,
-      list_phone_book: user.list_phone_book,
-      list_friend_request: user.list_friend_request
-    }).then((userUpdate) => {
-      res.status(200).send(new Response(false, CONSTANT.UPDATE_PROFILE_SUCCESS, null))
-    }).catch(err => {
-      res.status(400).send(new Response(true, err, null))
-    })
-  })
-}
 
 const update = (req, res) => {
   const errs = validationResult(req).formatWith(errorFormatter) // format chung
+  const id = req.query.id
   const phone = req.query.phone
   const email = req.query.email
   const name = req.body.name
   const avatar = req.body.avatar
   const role = req.body.role
   const active = req.body.active
-  const list_friend_id = req.body.list_friend_id
-  const list_phone_book = req.body.list_phone_book
-  const list_friend_request = req.body.list_friend_request
   const user = {
     phone: phone,
     email: email,
     name: name,
     avatar: avatar,
     role: role,
-    active: active,
-    list_friend_id: list_friend_id,
-    list_phone_book: list_phone_book,
-    list_friend_request: list_friend_request
+    active: active
   }
-  console.log(user);
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-    phone ? updateUserByPhone(res, user) : updateUserByEmail(res, user)
+    Account.findByPk(id).then(userDB => {
+      userDB.update({
+        name: user.name,
+        avatar: user.avatar,
+        role: user.role,
+        active: user.active
+      }).then((userUpdate) => {
+        res.status(200).send(new Response(false, CONSTANT.UPDATE_PROFILE_SUCCESS, null))
+      }).catch(err => {
+        res.status(400).send(new Response(true, err, null))
+      })
+    })
   } else {
     const response = new Response(true, CONSTANT.INVALID_VALUE, errs.array())
 
