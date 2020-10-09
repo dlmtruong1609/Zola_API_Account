@@ -12,7 +12,18 @@ router.put('/api/v0/users/update', userValidator.validateUpdate(), userService.u
 router.get('/api/v0/users', userService.getALLlistUser)
 router.get('/api/v0/users/detail', userService.find)
 
-router.get('/api/v0/users/addFriend',userValidator.valiteAddFriend() ,userRequestService.addFriend)
+router.post('/api/v0/users/addFriend',userValidator.validateAddFriend() ,userRequestService.addFriend)
+router.post('/api/v0/users/accepFriend',userValidator.validateAccepFriend() ,userRequestService.acceptFriend)
+router.post('/api/v0/users/declineFriend',userValidator.validateDeclineFriend() ,userRequestService.declineFriend)
+
 router.get('/api/v0/users/listFriendRequest',userRequestService.getALLlistUserRequest)
+
+router.get('/api/v0/users/getListFriendRequestByPhoneUser', userValidator.validatePhoneUserRequest(), userRequestService.getListFriendRequestByPhoneUser)
+
+router.get('/api/v0/users/getListFriendContactByPhoneUser', userValidator.validatePhoneUserRequest(), userRequestService.getListFriendContactByPhoneUser)
+
+router.get('/api/v0/users/getListFriendPhoneBookByPhoneUser', userValidator.validatePhoneUserRequest(), userRequestService.getListPhoneBookByPhoneUser)
+
+router.get('/api/v0/users/textSearch', userValidator.validateTextSearch(), userRequestService.getTextSearch)
 
 module.exports = router

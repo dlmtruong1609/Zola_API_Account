@@ -4,8 +4,11 @@ const db = require('../models')
 const Account = db.account
 const UserRequest = db.userRequest
 const UserContact = db.userContact
+const room = db.room
+const userAttend = db.userAttend
 var { validationResult } = require('express-validator')
 const CONSTANT = require('../utils/account.constants')
+const { userRequest } = require('../models')
 require('dotenv').config()
 // Biến cục bộ trên server này sẽ lưu trữ tạm danh sách token
 // Nen lưu vào Redis hoặc DB
@@ -22,307 +25,277 @@ const errorFormatter = ({ location, msg, param, value, nestedErrors }) => {
 
 const addFriend = (req, res) => {
   const errs = validationResult(req).formatWith(errorFormatter) // format chung
-  //user phone
-  const user_phone = req.query.phone;
-  //user phone want add friend
-  const user_phone_contact = req.query.phoneContact;
-  //if userPhone equal userPhoneContact then  return error
-  if (user_phone === user_phone_contact) {
-    return new Response(false, CONSTANT.USER_CONTACT_INVALID, null)
-  }
+  const user_id = req.body.user_id // Đây là id của chính user đó
+  const user_request_id = req.body.user_request_id // Đây là id của user mà user đó muốn kết bạn
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-    //find user phone if exists then continute otherwise it will return error
-    Account.findOne({
-      where: { phone: user_phone }
-    }).then((user) => {
-      if (user === null) {
-        return res.status(200).send(
-          new Response(false, CONSTANT.NOT_FOUND_USER, null)
-        )
+    UserRequest.findOne({ where:{user_id: parseInt(user_id)} }).then(userRequestFind => {
+      // console.log(userRequestFind)
+      // khoi tao user neu lan dau tao
+      if (userRequestFind === null) {
+        const initListUserRequest = [];
+        initListUserRequest.push(user_request_id);
+        UserRequest.create({
+          user_id: user_id.toString(),
+          user_request_id: initListUserRequest
+        }).then(value => {
+          return res.status(200).send(new Response(true, CONSTANT.WAITING_USER_ACCEPT, null))
+        })
       }
-      ////find user contact phone if exists then continute otherwise it will return error
-      Account.findOne({
-        where: { phone: user_phone_contact }
-      }).then((user_contact) => {
-        if (user_contact === null) {
-          return res.status(200).send(
-            new Response(false, CONSTANT.NOT_FOUND_USER_CONTACT, null)
-          )
-        }
-        //Find userPhone had in list add_friend , if not yet continute otherwise return message 'user exists in user contact'
-        UserContact.findOne({
-          where: { user_id: user.id.toString() }
-        }).then((userContact) => {
-          if (userContact != null) {
-            userContact.friend_id.forEach(element => {
-              if (element === user_contact.id.toString()) {
-                return res.status(200).send(
-                  new Response(false, CONSTANT.USER_EXISTS_IN_USERCONTACT, null)
-                )
-              }
-            });
-          }
-        })
-        //Find user had in list request_friend ,
-        UserRequest.findOne({
-          where: { user_id: user.id.toString() }
-        }).then((userRequest) => {
-          if (userRequest != null) {
-            userRequest.user_request_id.forEach(element => {
-              if (element === user_contact.id.toString()) {
-                return res.status(200).send(
-                  new Response(false, CONSTANT.USER_EXISTS_IN_USERREQUEST, null)
-                )
-              }
-            });
-            userRequest.user_request_id.push(user_contact.id.toString());
-            //error update
-            userRequest.update(
-              { user_request_id: userRequest.user_request_id }
-            ).then((userRequestUpdate) => {
-              return res.status(200).send(new Response(false, CONSTANT.WAITING_USER_ACCEPT, userRequestUpdate))
-            }).catch(err => {
-              return res.status(400).send(new Response(true, err, null))
-            })
-          } else {
-            //init request_friend for user phone 
-            const user_request_id = [];
-            user_request_id.push(user_contact.id);
-            const userRequestAdd = {
-              user_request_id: user_request_id,
-              user_id: user.id
-            }
-            UserRequest.create(userRequestAdd)
-              .then(data => {
-                return res.status(201).send(new Response(false, CONSTANT.WAITING_USER_ACCEPT, null))
-              })
-              .catch(err => {
-                return res.status(500).json(new Response(true, err.message || 'Some error occurred while creating the Tutorial.', null))
-              })
-          }
-        })
+      //neu user ton tai thi them user nay vao
+      userRequestFind.user_request_id.push(parseInt(user_request_id));
+      console.log(userRequestFind)
+      UserRequest.update({
+        user_request_id: userRequestFind.user_request_id
+      },{
+        where : {id: userRequestFind.id}
+      }).then(value => {
+        return res.status(200).send(new Response(true, CONSTANT.WAITING_USER_ACCEPT, null))
       })
     })
-      .catch((_err) => {
-        res.status(500).send(new Response(false, CONSTANT.SERVER_ERROR, null))
-      })
-
   } else {
-    const response = new Response(true, CONSTANT.INVALID_VALUE, errs.array())
-
+    const response = new Response(false, CONSTANT.INVALID_VALUE, errs.array())
     res.status(400).send(response)
   }
+ 
 }
 
-const getALLlistUserRequest = (_req, res) => {
+const getALLlistUserRequest = (req, res) => {
   UserRequest.findAll({
   })
     .then((allUser) => {
       return res.status(200).send(
-        new Response(false, CONSTANT.USER_LIST, allUser)
+        new Response(true, CONSTANT.USER_LIST, allUser)
       )
     })
     .catch((_err) => {
       console.log(_err)
-      return res.status(500).send(new Response(true, CONSTANT.SERVER_ERROR, null))
+      return res.status(500).send(new Response(false, CONSTANT.SERVER_ERROR, null))
     })
 }
 
-const acceptFriend = (_req, res) => {
+const acceptFriend = (req, res) => {
   const errs = validationResult(req).formatWith(errorFormatter) // format chung
-  //user phone
-  const user_phone = req.query.phone;
-  //user phone want accept friend
-  const user_phone_contact = req.query.phoneContact;
-  //if userPhone equal userPhoneContact then  return error
-  if (user_phone === user_phone_contact) {
-    return new Response(false, CONSTANT.USER_CONTACT_INVALID, null)
-  }
+  // user phone
+  const user_id = req.body.user_id
+  // user phone want accept friend
+  const user_id_want_accept = req.body.user_id_want_accept
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-    //find user phone if exists then continute otherwise it will return error
-    Account.findOne({
-      where: { phone: user_phone }
-    }).then((user) => {
-      if (user === null) {
-        return res.status(200).send(
-          new Response(false, CONSTANT.NOT_FOUND_USER, null)
-        )
-      }
-      ////find user contact phone if exists then continute otherwise it will return error
-      Account.findOne({
-        where: { phone: user_phone_contact }
-      }).then((user_contact) => {
-
-        if (user_contact === null) {
-          return res.status(200).send(
-            new Response(false, CONSTANT.NOT_FOUND_USER_CONTACT, null)
-          )
+    UserRequest.findOne({ where: {user_id: user_id} }).then(value => {
+      value.user_request_id.forEach( (element, number, object) => {
+        if(element === parseInt(user_id_want_accept)){
+          object.splice(number, 1);
         }
-        //Find user had in list request_friend ,
-        UserRequest.findOne({
-          where: { user_id: user.id.toString() }
-        }).then((userRequest) => {
-          if (userRequest != null) {
-            userRequest.user_request_id.forEach((element, index, object) => {
-              if (element === user_contact.id.toString()) {
-                object.splice(index, 1);
-              }
-            });
-            userRequest.user_request_id.forEach((element, index, object) => {
-              console.log(element);
-            });
-            // //error update
-            // userRequest.update(
-            //   { user_request_id: userRequest.user_request_id} 
-            // ).then((userRequestUpdate) => {
-            //   return res.status(200).send(new Response(false, CONSTANT.WAITING_USER_ACCEPT, userRequestUpdate))
-            // }).catch(err => {
-            //   return res.status(400).send(new Response(true, err, null))
-            // })
-          }
-        })
-      });
-    })
-      .catch((_err) => {
-        res.status(500).send(new Response(false, CONSTANT.SERVER_ERROR, null))
       })
+      console.log(value)
+      //move user request to user contact
+      UserRequest.update({
+        user_request_id: value.user_request_id
+      },{
+        where: {
+          id: value.id
+        }
+      })
+      UserContact.findOne({
+        user_id: value.user_id
+      }).then(userContactCreate => {
+        //neu khoi tao lan dau
+        if (userContactCreate === null){
+          UserContact.create({
+            user_id: user_id,
+            friend_id: [...user_id_want_accept]
+          })
+        } else {
+          userContactCreate.friend_id.push(user_id_want_accept);
+          userContactCreate.update({
+            friend_id: userContactCreate.friend_id
+          })
+        }
+        // tao room chung vi ca 2 dieu kien tren deu thanh cong 
+        room.create({
+          name:null,
+          list_message:[],
+          type:null
+        }).then(roomCreate => {
+          userAttend.create({
+            room_id: roomCreate.id,
+            user_id: user_id
+          })
+
+          userAttend.create({
+            room_id: roomCreate.id,
+            user_id: user_id_want_accept
+          })
+          .then(userContactCreate => {
+            return res.status(200).send(
+              new Response(true, CONSTANT.USER_CONTACT_UPDATE_SUCCESS, null)
+            )
+          })
+        })
+      })
+    })
+  } else {
+    const response = new Response(false, CONSTANT.INVALID_VALUE, errs.array())
+    res.status(400).send(response)
   }
 }
 
-const declineFriend = (_req, res) => {
+const declineFriend = (req, res) => {
   const errs = validationResult(req).formatWith(errorFormatter) // format chung
-  //user phone
-  const user_phone = req.query.phone;
-  //user phone want accept friend
-  const user_phone_contact = req.query.phoneContact;
-  //if userPhone equal userPhoneContact then  return error
-  if (user_phone === user_phone_contact) {
-    return new Response(false, CONSTANT.USER_CONTACT_INVALID, null)
-  }
+  // user phone
+  const user_id = req.body.user_id
+  // user phone want accept friend
+  const user_id_want_accept = req.body.user_id_want_decline
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-    //find user phone if exists then continute otherwise it will return error
-    Account.findOne({
-      where: { phone: user_phone }
-    }).then((user) => {
-      if (user === null) {
-        return res.status(200).send(
-          new Response(false, CONSTANT.NOT_FOUND_USER, null)
-        )
-      }
-      ////find user contact phone if exists then continute otherwise it will return error
-      Account.findOne({
-        where: { phone: user_phone_contact }
-      }).then((user_contact) => {
-        if (user_contact === null) {
-          return res.status(200).send(
-            new Response(false, CONSTANT.NOT_FOUND_USER_CONTACT, null)
-          )
+    UserRequest.findOne({ where: {user_id: user_id} }).then(value => {
+      value.user_request_id.forEach( (element, number, object) => {
+        if(element === parseInt(user_id_want_accept)){
+          object.splice(number, 1);
         }
-        //Find user had in list request_friend ,
-        UserRequest.findOne({
-          where: { user_id: user.id.toString() }
-        }).then((userRequest) => {
-          if (userRequest != null) {
-            userRequest.user_request_id.forEach((element, index, object) => {
-              if (element === user_contact.id.toString()) {
-                object.splice(index, 1);
-              }
-            });
-            userRequest.user_request_id.forEach((element, index, object) => {
-              console.log(element);
-            });
-            // //error update
-            // userRequest.update(
-            //   { user_request_id: userRequest.user_request_id} 
-            // ).then((userRequestUpdate) => {
-            //   return res.status(200).send(new Response(false, CONSTANT.WAITING_USER_ACCEPT, userRequestUpdate))
-            // }).catch(err => {
-            //   return res.status(400).send(new Response(true, err, null))
-            // })
-          }
-        })
-      });
-    })
-      .catch((_err) => {
-        res.status(500).send(new Response(false, CONSTANT.SERVER_ERROR, null))
       })
+      UserRequest.update({
+        user_request_id: value.user_request_id
+      },{
+        where: {
+          id: value.id
+        }
+      }).then(userHadUpdate => {
+        return res.status(200).send(
+          new Response(true, CONSTANT.USER_DECLINE_UPDATE_SUCCESS, null)
+        )
+      })
+    })
+  } else {
+    const response = new Response(false, CONSTANT.INVALID_VALUE, errs.array())
+    res.status(400).send(response)
   }
 }
 
+// const deleteFriend = (req, res) => {
+//   const errs = validationResult(req).formatWith(errorFormatter) // format chung
+//   // user phone
+//   const user_phone = req.query.phone
+//   // user phone want accept friend
+//   const user_phone_contact = req.query.phoneContact
+//   // if userPhone equal userPhoneContact then  return error
+//   if (user_phone === user_phone_contact) {
+//     return new Response(false, CONSTANT.USER_CONTACT_INVALID, null)
+//   }
+//   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
+   
 
-const deleteFriend = (_req, res) => {
+//   } else {
+//     const response = new Response(false, CONSTANT.INVALID_VALUE, errs.array())
+//     res.status(400).send(response)
+//   }
+// }
+
+const getListFriendRequestByPhoneUser = async (req, res) => {
   const errs = validationResult(req).formatWith(errorFormatter) // format chung
-  //user phone
-  const user_phone = req.query.phone;
-  //user phone want accept friend
-  const user_phone_contact = req.query.phoneContact;
-  //if userPhone equal userPhoneContact then  return error
-  if (user_phone === user_phone_contact) {
-    return new Response(false, CONSTANT.USER_CONTACT_INVALID, null)
-  }
+  // user phone
+  const user_phone = req.query.phone
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-    //find user phone if exists then continute otherwise it will return error
-    Account.findOne({
-      where: { phone: user_phone }
-    }).then((user) => {
-      if (user === null) {
-        return res.status(200).send(
-          new Response(false, CONSTANT.NOT_FOUND_USER, null)
-        )
-      }
-      ////find user contact phone if exists then continute otherwise it will return error
-      Account.findOne({
-        where: { phone: user_phone_contact }
-      }).then((user_contact) => {
-        if (user_contact === null) {
-          return res.status(200).send(
-            new Response(false, CONSTANT.NOT_FOUND_USER_CONTACT, null)
-          )
-        }
-        //Find user had in list request_friend ,
-        UserContact.findOne({
-          where: { user_id: user.id.toString() }
-        }).then((userRequest) => {
-          if (userRequest != null) {
-            userRequest.user_request_id.forEach((element, index, object) => {
-              if (element === user_contact.id.toString()) {
-                object.splice(index, 1);
-              }
-            });
-            userRequest.user_request_id.forEach((element, index, object) => {
-              console.log(element);
-            });
-            // //error update
-            // userRequest.update(
-            //   { user_request_id: userRequest.user_request_id} 
-            // ).then((userRequestUpdate) => {
-            //   return res.status(200).send(new Response(false, CONSTANT.WAITING_USER_ACCEPT, userRequestUpdate))
-            // }).catch(err => {
-            //   return res.status(400).send(new Response(true, err, null))
-            // })
-          }
-        })
-      });
+    const result = await db.sequelize.query(`select * from public."Accounts" a join public."UserRequests" b on a.id = b.user_id where a.phone='${user_phone}'`)
+    if(typeof result[0][0] === 'undefined'){
+      return res.status(200).send(
+        new Response(false, CONSTANT.DONT_HAVE_ANY_FRIEND_REQUEST, null)
+      )
+    }
+    // console.log(result[0][0].user_request_id);
+    Account.findAll({
+      where :{ id: result[0][0].user_request_id}
+    }).then(listUserFound => {
+      return res.status(200).send(
+        new Response(true, CONSTANT.FIND_SUCCESS, listUserFound)
+      )
     })
-      .catch((_err) => {
-        res.status(500).send(new Response(false, CONSTANT.SERVER_ERROR, null))
-      })
+  } else {
+    const response = new Response(false, CONSTANT.INVALID_VALUE, errs.array())
+    res.status(400).send(response)
   }
 }
 
-const getListFriendByPhoneUser = (_req, res) => {
-
+const getListFriendContactByPhoneUser = async (req, res) => {
+  const errs = validationResult(req).formatWith(errorFormatter) // format chung
+  console.log('ok')
+  // user phone
+  const user_phone = req.query.phone
+  if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
+    const result = await db.sequelize.query(`select * from public."Accounts" a join public."UserContacts" b on a.id = cast(b.user_id as int) where a.phone='${user_phone}'`)
+    if(typeof result[0][0] === 'undefined'){
+      return res.status(200).send(
+        new Response(false, CONSTANT.DONT_HAVE_ANY_FRIEND_CONTACT, null)
+      )
+    }
+    Account.findAll({
+      where :{ id: result[0][0].friend_id}
+    }).then(listUserFound => {
+      return res.status(200).send(
+        new Response(true, CONSTANT.FIND_SUCCESS, listUserFound)
+      )
+    })
+  } else {
+    const response = new Response(false, CONSTANT.INVALID_VALUE, errs.array())
+    res.status(400).send(response)
+  }
 }
 
-const getListFriendRequestByPhoneUser = (_req, res) => {
-  
+const getListPhoneBookByPhoneUser = async (req, res) => {
+  const errs = validationResult(req).formatWith(errorFormatter) // format chung
+  console.log('ok')
+  // user phone
+  const user_phone = req.query.phone
+  if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
+    const result = await db.sequelize.query(`select * from public."Accounts" a join public."UserPhoneBooks" b on a.id = b.user_id where a.phone='${user_phone}'`)
+    if(typeof result[0][0] === 'undefined'){
+      return res.status(200).send(
+        new Response(false, CONSTANT.DONT_HAVE_ANY_FRIEND_BOOK, null)
+      )
+    }
+    // console.log(result[0][0].user_request_id);
+    Account.findAll({
+      where :{ id: result[0][0].user_phone_book_id}
+    }).then(listUserFound => {
+      return res.status(200).send(
+        new Response(true, CONSTANT.FIND_SUCCESS, listUserFound)
+      )
+    })
+  } else {
+    const response = new Response(false, CONSTANT.INVALID_VALUE, errs.array())
+    res.status(400).send(response)
+  }
 }
 
-const getListPhoneBookByPhoneUser = (_req, res) => {
-  
+const getTextSearch = async (req, res) => {
+  const errs = validationResult(req).formatWith(errorFormatter) // format chung
+  const value = req.query.value
+  if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
+    const result = await db.sequelize.query(`SELECT * FROM public."Accounts" WHERE  to_tsvector(email || ' ' || name || ' ' || phone) @@ to_tsquery('${value}')`)
+    if(typeof result[0][0] === 'undefined'){
+      return res.status(200).send(
+        new Response(false, CONSTANT.USER_NOT_FOUND, null)
+      )
+    }else{
+      return res.status(200).send(
+        new Response(false, CONSTANT.FIND_SUCCESS, result[0][0])
+      )
+    }
+  } else {
+    const response = new Response(false, CONSTANT.INVALID_VALUE, errs.array())
+    res.status(400).send(response)
+  }
 }
+
+
+
 
 module.exports = {
   addFriend: addFriend,
-  getALLlistUserRequest: getALLlistUserRequest
+  getALLlistUserRequest: getALLlistUserRequest,
+  acceptFriend: acceptFriend,
+  declineFriend: declineFriend,
+  getListFriendRequestByPhoneUser: getListFriendRequestByPhoneUser,
+  getListFriendContactByPhoneUser: getListFriendContactByPhoneUser,
+  getListPhoneBookByPhoneUser: getListPhoneBookByPhoneUser,
+  getTextSearch: getTextSearch
+
 }

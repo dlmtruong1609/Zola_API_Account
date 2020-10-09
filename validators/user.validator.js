@@ -2,6 +2,7 @@ const { check, query } = require('express-validator')
 const db = require('../models')
 const Account = db.account
 const CONSTANT = require('../utils/account.constants')
+const { userRequest } = require('../models')
 require('dotenv').config()
 
 const validateUpdateProfile = () => {
@@ -56,15 +57,91 @@ const validateUpdate = () => {
   ]
 }
 
-const valiteAddFriend = () => {
+
+const validateAddFriend = () => {
+  return [
+    check('user_id').custom((value, { req }) => {
+      return Account.findByPk(req.body.user_id).then((account) => {
+        if (!account) {
+          return Promise.reject(CONSTANT.USER_NOT_FOUND)
+        }
+      })
+    }),
+    check('user_request_id').custom((value, { req }) => {
+      return Account.findByPk(req.body.user_request_id).then((account) => {
+        if (!account) {
+          return Promise.reject(CONSTANT.NOT_FOUND_USER_CONTACT)
+        }
+      })
+    }),
+    check('user_request_id').custom(async (value, { req }) => {
+      const user_id = req.body.user_id
+      const result = await db.sequelize.query(`SELECT * FROM public."UserRequests" where ${value}=ANY(user_request_id) AND user_id=${user_id};`)
+      
+      if (result[1].rowCount === 1) {
+        return Promise.reject(CONSTANT.USER_EXISTS_IN_USERREQUEST)
+      }
+    })
+  ]
+}
+
+const validateAccepFriend = () => {
+  return [
+    check('user_id').custom((value, { req }) => {
+      return Account.findByPk(req.body.user_id).then((account) => {
+        if (!account) {
+          return Promise.reject(CONSTANT.USER_NOT_FOUND)
+        }
+      })
+    }),
+    check('user_id_want_accept').custom(async (value, { req }) => {
+      const user_id = req.body.user_id
+      const result = await db.sequelize.query(`SELECT * FROM public."UserRequests" where ${value}=ANY(user_request_id) AND user_id=${user_id};`)
+      if (result[1].rowCount === 0) {
+        return Promise.reject(CONSTANT.USER_ACCEPT_NOT_FOUND)
+      }
+    })
+  ]
+}
+
+const validateDeclineFriend = () => {
+  return [
+    check('user_id').custom((value, { req }) => {
+      return Account.findByPk(req.body.user_id).then((account) => {
+        if (!account) {
+          return Promise.reject(CONSTANT.USER_NOT_FOUND)
+        }
+      })
+    }),
+    check('user_id_want_decline').custom(async (value, { req }) => {
+      const user_id = req.body.user_id
+      const result = await db.sequelize.query(`SELECT * FROM public."UserRequests" where ${value}=ANY(user_request_id) AND user_id=${user_id};`)
+      if (result[1].rowCount === 0) {
+        return Promise.reject(CONSTANT.USER_DECLINE_NOT_FOUND)
+      }
+    })
+  ]
+}
+
+const validatePhoneUserRequest  = () => {
   return [
     check('phone', CONSTANT.PHONE_IS_REQUIRED).not().isEmpty(),
-    check('phone', CONSTANT.PHONE_HAS_LENGHT_10).isLength({ min: 10, max: 10 }),
     check('phone', CONSTANT.IS_PHONE).matches(/((09|03|07|08|05)+([0-9]{8})\b)/),
-    check('phoneContact', "phone contact:" + CONSTANT.PHONE_IS_REQUIRED).not().isEmpty(),
-    check('phoneContact', "phone contact:" + CONSTANT.PHONE_HAS_LENGHT_10).isLength({ min: 10, max: 10 }),
-    check('phoneContact', "phone contact:" + CONSTANT.IS_PHONE).matches(/((09|03|07|08|05)+([0-9]{8})\b)/)
+    check('phone').custom((value, { req }) => {
+      return Account.findOne({
+        where: { phone: value }
+      }).then((account) => {
+        if (account === null) {
+          return Promise.reject(CONSTANT.USER_NOT_FOUND)
+        }
+      })
+    })
+  ]
+}
 
+const validateTextSearch = () => {
+  return [
+    check('value', CONSTANT.NAME_IS_REQUIRED).not().isEmpty()
   ]
 }
 
@@ -72,5 +149,9 @@ module.exports = {
   validateUpdateProfile: validateUpdateProfile,
   validateAddUser: validateAddUser,
   validateUpdate: validateUpdate,
-  valiteAddFriend: valiteAddFriend
+  validateAddFriend: validateAddFriend,
+  validateAccepFriend: validateAccepFriend,
+  validateDeclineFriend: validateDeclineFriend,
+  validatePhoneUserRequest: validatePhoneUserRequest,
+  validateTextSearch: validateTextSearch
 }
