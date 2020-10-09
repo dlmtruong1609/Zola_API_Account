@@ -2,6 +2,8 @@
 const Response = require('../utils/response')
 const db = require('../models')
 const Account = db.account
+const UserRequest = db.userRequest
+const UserContact = db.userContact
 const jwtHelper = require('../helpers/jwt.helper')
 var { validationResult } = require('express-validator')
 const CONSTANT = require('../utils/account.constants')
@@ -255,6 +257,10 @@ const update = (req, res) => {
     res.status(400).send(response)
   }
 }
+
+
+
+
 
 module.exports = {
   updateProfile: updateProfile,

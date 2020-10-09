@@ -56,8 +56,21 @@ const validateUpdate = () => {
   ]
 }
 
+const valiteAddFriend = () => {
+  return [
+    check('phone', CONSTANT.PHONE_IS_REQUIRED).not().isEmpty(),
+    check('phone', CONSTANT.PHONE_HAS_LENGHT_10).isLength({ min: 10, max: 10 }),
+    check('phone', CONSTANT.IS_PHONE).matches(/((09|03|07|08|05)+([0-9]{8})\b)/),
+    check('phoneContact', "phone contact:" + CONSTANT.PHONE_IS_REQUIRED).not().isEmpty(),
+    check('phoneContact', "phone contact:" + CONSTANT.PHONE_HAS_LENGHT_10).isLength({ min: 10, max: 10 }),
+    check('phoneContact', "phone contact:" + CONSTANT.IS_PHONE).matches(/((09|03|07|08|05)+([0-9]{8})\b)/)
+
+  ]
+}
+
 module.exports = {
   validateUpdateProfile: validateUpdateProfile,
   validateAddUser: validateAddUser,
-  validateUpdate: validateUpdate
+  validateUpdate: validateUpdate,
+  valiteAddFriend: valiteAddFriend
 }

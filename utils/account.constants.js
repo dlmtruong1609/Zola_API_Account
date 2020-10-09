@@ -16,6 +16,7 @@ module.exports.CODE_VERIFIED = 'Code verified'
 // validator
 module.exports.NAME_IS_REQUIRED = 'Name is required'
 module.exports.PHONE_IS_REQUIRED = 'Phone is required'
+
 module.exports.EMAIL_IS_REQUIRED = 'Email is required'
 module.exports.NAME_SIZE = 'Username > 6 and < 32 symbols'
 module.exports.IS_PHONE = 'Phone invalid'
@@ -46,5 +47,10 @@ module.exports.SERVER_ERROR = 'Server error, Please try again.'
 
 module.exports.FIND_USER_SUCCESS = 'find user success'
 module.exports.NOT_FOUND_USER = 'not found user'
+module.exports.NOT_FOUND_USER_CONTACT = 'not found user contact'
+module.exports.USER_EXISTS_IN_USERREQUEST = 'users had existst in userRequest'
+module.exports.USER_EXISTS_IN_USERCONTACT = 'users had existst in usercontact'
+module.exports.WAITING_USER_ACCEPT = 'waiting user accept'
 
+module.exports.USER_CONTACT_INVALID = 'user contact invalid'
 module.exports.SEND_MAIL_FAILED = 'Has problem when send email'
