@@ -258,10 +258,6 @@ const update = (req, res) => {
   }
 }
 
-
-
-
-
 module.exports = {
   updateProfile: updateProfile,
   search: search,

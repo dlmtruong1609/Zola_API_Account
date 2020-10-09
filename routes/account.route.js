@@ -7,7 +7,7 @@ router.post('/api/v0/accounts/signin', accountValidator.validateSignIn(), accoun
 
 router.get('/api/v0/accounts/passwords/forgot', accountValidator.validateForgotPassword(), accountService.forgotPassword)
 
-router.post('/api/v0/accounts/passwords/change', accountValidator.validateChangePassword(), accountService.changePassword)
+router.put('/api/v0/accounts/passwords/change', accountValidator.validateChangePassword(), accountService.changePassword)
 
 router.post('/api/v0/accounts/signup', accountValidator.validateSignUp(), accountService.signup)
 

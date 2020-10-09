@@ -5,6 +5,14 @@ const Account = db.account
 const CONSTANT = require('../utils/account.constants')
 const validateSignUp = () => {
   return [
+    check('phone').custom((value, { req }) => {
+      const phone = req.body.phone
+      const email = req.body.email
+      if (email || phone) {
+        return true
+      }
+      throw new Error('Please enter phone or email')
+    }),
     check('name', CONSTANT.NAME_IS_REQUIRED).not().isEmpty(), // validate để trống trường email sử dụng hàm notEmpty()
     check('name', CONSTANT.NAME_SIZE).isLength({ min: 6, max: 32 }),
     check('phone', CONSTANT.PHONE_IS_REQUIRED).optional({ checkFalsy: true }).not().isEmpty(),
@@ -51,6 +59,14 @@ const validateSignUp = () => {
 
 const validateSignIn = () => {
   return [
+    check('phone').custom((value, { req }) => {
+      const phone = req.body.phone
+      const email = req.body.email
+      if (email || phone) {
+        return true
+      }
+      throw new Error('Please enter phone or email')
+    }),
     check('phone').optional({ checkFalsy: true }).custom((value, { req }) => {
       return Account.findOne({
         where: { phone: value }

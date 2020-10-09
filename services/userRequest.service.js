@@ -22,90 +22,13 @@ const errorFormatter = ({ location, msg, param, value, nestedErrors }) => {
 
 const addFriend = (req, res) => {
   const errs = validationResult(req).formatWith(errorFormatter) // format chung
-  //user phone
-  const user_phone = req.query.phone;
-  //user phone want add friend
-  const user_phone_contact = req.query.phoneContact;
-  //if userPhone equal userPhoneContact then  return error
-  if (user_phone === user_phone_contact) {
-    return new Response(false, CONSTANT.USER_CONTACT_INVALID, null)
-  }
+  const user_id = req.query.user_id // Đây là id của chính user đó
+  const user_request_id = req.body.user_request_id // Đây là id của user mà user đó muốn kết bạn
+  // user phone
+  const user_phone = req.body.user_phone
+  // // user phone want add friend
+  const user_phone_of_friend = req.body.user_phone_of_friend
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-    //find user phone if exists then continute otherwise it will return error
-    Account.findOne({
-      where: { phone: user_phone }
-    }).then((user) => {
-      if (user === null) {
-        return res.status(200).send(
-          new Response(false, CONSTANT.NOT_FOUND_USER, null)
-        )
-      }
-      ////find user contact phone if exists then continute otherwise it will return error
-      Account.findOne({
-        where: { phone: user_phone_contact }
-      }).then((user_contact) => {
-        if (user_contact === null) {
-          return res.status(200).send(
-            new Response(false, CONSTANT.NOT_FOUND_USER_CONTACT, null)
-          )
-        }
-        //Find userPhone had in list add_friend , if not yet continute otherwise return message 'user exists in user contact'
-        UserContact.findOne({
-          where: { user_id: user.id.toString() }
-        }).then((userContact) => {
-          if (userContact != null) {
-            userContact.friend_id.forEach(element => {
-              if (element === user_contact.id.toString()) {
-                return res.status(200).send(
-                  new Response(false, CONSTANT.USER_EXISTS_IN_USERCONTACT, null)
-                )
-              }
-            });
-          }
-        })
-        //Find user had in list request_friend ,
-        UserRequest.findOne({
-          where: { user_id: user.id.toString() }
-        }).then((userRequest) => {
-          if (userRequest != null) {
-            userRequest.user_request_id.forEach(element => {
-              if (element === user_contact.id.toString()) {
-                return res.status(200).send(
-                  new Response(false, CONSTANT.USER_EXISTS_IN_USERREQUEST, null)
-                )
-              }
-            });
-            userRequest.user_request_id.push(user_contact.id.toString());
-            //error update
-            userRequest.update(
-              { user_request_id: userRequest.user_request_id }
-            ).then((userRequestUpdate) => {
-              return res.status(200).send(new Response(false, CONSTANT.WAITING_USER_ACCEPT, userRequestUpdate))
-            }).catch(err => {
-              return res.status(400).send(new Response(true, err, null))
-            })
-          } else {
-            //init request_friend for user phone 
-            const user_request_id = [];
-            user_request_id.push(user_contact.id);
-            const userRequestAdd = {
-              user_request_id: user_request_id,
-              user_id: user.id
-            }
-            UserRequest.create(userRequestAdd)
-              .then(data => {
-                return res.status(201).send(new Response(false, CONSTANT.WAITING_USER_ACCEPT, null))
-              })
-              .catch(err => {
-                return res.status(500).json(new Response(true, err.message || 'Some error occurred while creating the Tutorial.', null))
-              })
-          }
-        })
-      })
-    })
-      .catch((_err) => {
-        res.status(500).send(new Response(false, CONSTANT.SERVER_ERROR, null))
-      })
 
   } else {
     const response = new Response(true, CONSTANT.INVALID_VALUE, errs.array())
@@ -114,7 +37,7 @@ const addFriend = (req, res) => {
   }
 }
 
-const getALLlistUserRequest = (_req, res) => {
+const getALLlistUserRequest = (req, res) => {
   UserRequest.findAll({
   })
     .then((allUser) => {
@@ -128,18 +51,18 @@ const getALLlistUserRequest = (_req, res) => {
     })
 }
 
-const acceptFriend = (_req, res) => {
+const acceptFriend = (req, res) => {
   const errs = validationResult(req).formatWith(errorFormatter) // format chung
-  //user phone
-  const user_phone = req.query.phone;
-  //user phone want accept friend
-  const user_phone_contact = req.query.phoneContact;
-  //if userPhone equal userPhoneContact then  return error
+  // user phone
+  const user_phone = req.query.phone
+  // user phone want accept friend
+  const user_phone_contact = req.query.phoneContact
+  // if userPhone equal userPhoneContact then  return error
   if (user_phone === user_phone_contact) {
     return new Response(false, CONSTANT.USER_CONTACT_INVALID, null)
   }
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-    //find user phone if exists then continute otherwise it will return error
+    // find user phone if exists then continute otherwise it will return error
     Account.findOne({
       where: { phone: user_phone }
     }).then((user) => {
@@ -148,32 +71,31 @@ const acceptFriend = (_req, res) => {
           new Response(false, CONSTANT.NOT_FOUND_USER, null)
         )
       }
-      ////find user contact phone if exists then continute otherwise it will return error
+      /// /find user contact phone if exists then continute otherwise it will return error
       Account.findOne({
         where: { phone: user_phone_contact }
       }).then((user_contact) => {
-
         if (user_contact === null) {
           return res.status(200).send(
             new Response(false, CONSTANT.NOT_FOUND_USER_CONTACT, null)
           )
         }
-        //Find user had in list request_friend ,
+        // Find user had in list request_friend ,
         UserRequest.findOne({
           where: { user_id: user.id.toString() }
         }).then((userRequest) => {
           if (userRequest != null) {
             userRequest.user_request_id.forEach((element, index, object) => {
               if (element === user_contact.id.toString()) {
-                object.splice(index, 1);
+                object.splice(index, 1)
               }
-            });
+            })
             userRequest.user_request_id.forEach((element, index, object) => {
-              console.log(element);
-            });
+              console.log(element)
+            })
             // //error update
             // userRequest.update(
-            //   { user_request_id: userRequest.user_request_id} 
+            //   { user_request_id: userRequest.user_request_id}
             // ).then((userRequestUpdate) => {
             //   return res.status(200).send(new Response(false, CONSTANT.WAITING_USER_ACCEPT, userRequestUpdate))
             // }).catch(err => {
@@ -181,7 +103,7 @@ const acceptFriend = (_req, res) => {
             // })
           }
         })
-      });
+      })
     })
       .catch((_err) => {
         res.status(500).send(new Response(false, CONSTANT.SERVER_ERROR, null))
@@ -189,18 +111,18 @@ const acceptFriend = (_req, res) => {
   }
 }
 
-const declineFriend = (_req, res) => {
+const declineFriend = (req, res) => {
   const errs = validationResult(req).formatWith(errorFormatter) // format chung
-  //user phone
-  const user_phone = req.query.phone;
-  //user phone want accept friend
-  const user_phone_contact = req.query.phoneContact;
-  //if userPhone equal userPhoneContact then  return error
+  // user phone
+  const user_phone = req.query.phone
+  // user phone want accept friend
+  const user_phone_contact = req.query.phoneContact
+  // if userPhone equal userPhoneContact then  return error
   if (user_phone === user_phone_contact) {
     return new Response(false, CONSTANT.USER_CONTACT_INVALID, null)
   }
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-    //find user phone if exists then continute otherwise it will return error
+    // find user phone if exists then continute otherwise it will return error
     Account.findOne({
       where: { phone: user_phone }
     }).then((user) => {
@@ -209,7 +131,7 @@ const declineFriend = (_req, res) => {
           new Response(false, CONSTANT.NOT_FOUND_USER, null)
         )
       }
-      ////find user contact phone if exists then continute otherwise it will return error
+      /// /find user contact phone if exists then continute otherwise it will return error
       Account.findOne({
         where: { phone: user_phone_contact }
       }).then((user_contact) => {
@@ -218,22 +140,22 @@ const declineFriend = (_req, res) => {
             new Response(false, CONSTANT.NOT_FOUND_USER_CONTACT, null)
           )
         }
-        //Find user had in list request_friend ,
+        // Find user had in list request_friend ,
         UserRequest.findOne({
           where: { user_id: user.id.toString() }
         }).then((userRequest) => {
           if (userRequest != null) {
             userRequest.user_request_id.forEach((element, index, object) => {
               if (element === user_contact.id.toString()) {
-                object.splice(index, 1);
+                object.splice(index, 1)
               }
-            });
+            })
             userRequest.user_request_id.forEach((element, index, object) => {
-              console.log(element);
-            });
+              console.log(element)
+            })
             // //error update
             // userRequest.update(
-            //   { user_request_id: userRequest.user_request_id} 
+            //   { user_request_id: userRequest.user_request_id}
             // ).then((userRequestUpdate) => {
             //   return res.status(200).send(new Response(false, CONSTANT.WAITING_USER_ACCEPT, userRequestUpdate))
             // }).catch(err => {
@@ -241,7 +163,7 @@ const declineFriend = (_req, res) => {
             // })
           }
         })
-      });
+      })
     })
       .catch((_err) => {
         res.status(500).send(new Response(false, CONSTANT.SERVER_ERROR, null))
@@ -249,19 +171,18 @@ const declineFriend = (_req, res) => {
   }
 }
 
-
-const deleteFriend = (_req, res) => {
+const deleteFriend = (req, res) => {
   const errs = validationResult(req).formatWith(errorFormatter) // format chung
-  //user phone
-  const user_phone = req.query.phone;
-  //user phone want accept friend
-  const user_phone_contact = req.query.phoneContact;
-  //if userPhone equal userPhoneContact then  return error
+  // user phone
+  const user_phone = req.query.phone
+  // user phone want accept friend
+  const user_phone_contact = req.query.phoneContact
+  // if userPhone equal userPhoneContact then  return error
   if (user_phone === user_phone_contact) {
     return new Response(false, CONSTANT.USER_CONTACT_INVALID, null)
   }
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-    //find user phone if exists then continute otherwise it will return error
+    // find user phone if exists then continute otherwise it will return error
     Account.findOne({
       where: { phone: user_phone }
     }).then((user) => {
@@ -270,7 +191,7 @@ const deleteFriend = (_req, res) => {
           new Response(false, CONSTANT.NOT_FOUND_USER, null)
         )
       }
-      ////find user contact phone if exists then continute otherwise it will return error
+      /// /find user contact phone if exists then continute otherwise it will return error
       Account.findOne({
         where: { phone: user_phone_contact }
       }).then((user_contact) => {
@@ -279,22 +200,22 @@ const deleteFriend = (_req, res) => {
             new Response(false, CONSTANT.NOT_FOUND_USER_CONTACT, null)
           )
         }
-        //Find user had in list request_friend ,
+        // Find user had in list request_friend ,
         UserContact.findOne({
           where: { user_id: user.id.toString() }
         }).then((userRequest) => {
           if (userRequest != null) {
             userRequest.user_request_id.forEach((element, index, object) => {
               if (element === user_contact.id.toString()) {
-                object.splice(index, 1);
+                object.splice(index, 1)
               }
-            });
+            })
             userRequest.user_request_id.forEach((element, index, object) => {
-              console.log(element);
-            });
+              console.log(element)
+            })
             // //error update
             // userRequest.update(
-            //   { user_request_id: userRequest.user_request_id} 
+            //   { user_request_id: userRequest.user_request_id}
             // ).then((userRequestUpdate) => {
             //   return res.status(200).send(new Response(false, CONSTANT.WAITING_USER_ACCEPT, userRequestUpdate))
             // }).catch(err => {
@@ -302,7 +223,7 @@ const deleteFriend = (_req, res) => {
             // })
           }
         })
-      });
+      })
     })
       .catch((_err) => {
         res.status(500).send(new Response(false, CONSTANT.SERVER_ERROR, null))
@@ -310,16 +231,16 @@ const deleteFriend = (_req, res) => {
   }
 }
 
-const getListFriendByPhoneUser = (_req, res) => {
+const getListFriendByPhoneUser = (req, res) => {
 
 }
 
-const getListFriendRequestByPhoneUser = (_req, res) => {
-  
+const getListFriendRequestByPhoneUser = (req, res) => {
+
 }
 
-const getListPhoneBookByPhoneUser = (_req, res) => {
-  
+const getListPhoneBookByPhoneUser = (req, res) => {
+
 }
 
 module.exports = {
