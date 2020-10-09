@@ -12,6 +12,7 @@ router.get('/api/v0/users/list', userService.findAllUserByCurrentPage)
 router.post('/api/v0/users/add', userValidator.validateAddUser(), userService.addUser)
 router.put('/api/v0/users/update', userValidator.validateUpdate(), userService.update)
 router.get('/api/v0/users', userService.getALLlistUser)
+router.delete('/api/v0/users/delete', userValidator.validateDelete(), userService.deleteUser)
 router.get('/api/v0/users/detail', userService.find)
 
 router.post('/api/v0/users/addFriend', userRequestValidatror.validateAddFriend(), userRequestService.addFriend)

@@ -258,6 +258,24 @@ const update = (req, res) => {
   }
 }
 
+const deleteUser = (req, res) => {
+  const id = req.query.id
+  const errs = validationResult(req).formatWith(errorFormatter) // format chung
+  if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
+    Account.destroy({
+      where: { id: id }
+    }).then((user) => {
+      res.status(200).send(new Response(false, CONSTANT.DELETE_SUCCESS, null))
+    }).catch(err => {
+      res.status(500).send(new Response(true, CONSTANT.ERROR_FROM_MONGO, err))
+    })
+  } else {
+    const response = new Response(true, CONSTANT.INVALID_VALUE, errs.array())
+
+    res.status(400).send(response)
+  }
+}
+
 module.exports = {
   updateProfile: updateProfile,
   search: search,
@@ -265,5 +283,6 @@ module.exports = {
   addUser: addUser,
   getALLlistUser: getALLlistUser,
   find: find,
-  update: update
+  update: update,
+  deleteUser: deleteUser
 }

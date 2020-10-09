@@ -56,8 +56,29 @@ const validateUpdate = () => {
   ]
 }
 
+const validateDelete = () => {
+  return [
+    // check("phone", CONSTANT.IS_PHONE).matches(/((09|03|07|08|05)+([0-9]{8})\b)/g),
+    check('id').custom((value, { req }) => {
+      return Account.findByPk(req.query.id).then((account) => {
+        if (!account) {
+          return Promise.reject(CONSTANT.USER_NOT_FOUND)
+        }
+      })
+    }),
+    check('id').custom((value, { req }) => {
+      return Account.findByPk(req.query.id).then((account) => {
+        if (account && account.active === true) {
+          return Promise.reject(CONSTANT.ACCCOUNT_IS_ACTIVE)
+        }
+      })
+    })
+  ]
+}
+
 module.exports = {
   validateUpdateProfile: validateUpdateProfile,
   validateAddUser: validateAddUser,
-  validateUpdate: validateUpdate
+  validateUpdate: validateUpdate,
+  validateDelete: validateDelete
 }

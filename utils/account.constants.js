@@ -12,7 +12,7 @@ module.exports.USER_ACCESS_DENIED = 'User Acess Denied'
 module.exports.FIND_SUCCESS = 'Find success'
 module.exports.SMS_FAILED = 'Send sms failed'
 module.exports.CODE_VERIFIED = 'Code verified'
-
+module.exports.DELETE_SUCCESS = 'Delete Success'
 // validator
 module.exports.NAME_IS_REQUIRED = 'Name is required'
 module.exports.PHONE_IS_REQUIRED = 'Phone is required'
@@ -36,6 +36,7 @@ module.exports.CHANGE_SUCCESS = 'Change Success'
 module.exports.TOKEN_HAS_EXPIRED = 'Token Has Expired'
 module.exports.ACTIVE_SUCCESS = 'Active Account Success'
 module.exports.ACCCOUNT_IS_NOT_ACTIVE = 'Account is not active'
+module.exports.ACCCOUNT_IS_ACTIVE = 'Account is active'
 module.exports.BODY_IS_EMPTY = 'Body is empty'
 
 module.exports.ROLE_IS_REQUIRED = 'Role is required'

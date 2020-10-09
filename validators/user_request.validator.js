@@ -18,10 +18,12 @@ const validateAddFriend = () => {
         }
       })
     }),
-    check('user_request_id').custom(async (value, { req }) => {
+    check('user_id').custom(async (value, { req }) => {
       const user_request_id = req.body.user_request_id
-      const result = await db.sequelize.query(`SELECT * FROM "UserRequests" where ${value}=ANY(user_request_id) AND user_id=${user_request_id};`)
-      if (result[1].rowCount === 0) {
+      const result = await db.sequelize.query(`SELECT * FROM "UserRequests" where ${value}=ANY(user_request_id) AND user_id=${user_request_id};`, {
+        type: db.sequelize.QueryTypes.SELECT
+      })
+      if (result.length === 0) {
         return Promise.reject(CONSTANT.USER_EXISTS_IN_USERREQUEST)
       }
     }),
