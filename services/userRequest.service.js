@@ -170,24 +170,39 @@ const declineFriend = (req, res) => {
   }
 }
 
-// const deleteFriend = (req, res) => {
-//   const errs = validationResult(req).formatWith(errorFormatter) // format chung
-//   // user phone
-//   const user_phone = req.query.phone
-//   // user phone want accept friend
-//   const user_phone_contact = req.query.phoneContact
-//   // if userPhone equal userPhoneContact then  return error
-//   if (user_phone === user_phone_contact) {
-//     return new Response(false, CONSTANT.USER_CONTACT_INVALID, null)
-//   }
-//   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-   
-
-//   } else {
-//     const response = new Response(false, CONSTANT.INVALID_VALUE, errs.array())
-//     res.status(400).send(response)
-//   }
-// }
+const deleteFriend = (req, res) => {
+  const errs = validationResult(req).formatWith(errorFormatter) // format chung
+  // user phone
+  const user_id = req.body.user_id
+  // user phone want accept friend
+  const user_id_want_delete = req.body.user_id_want_delete
+ 
+  if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
+    UserContact.findOne({ where: {user_id: user_id} }).then(value => {
+      // console.log(value.friend_id.length)
+      value.friend_id.forEach( (element, number, object) => {
+        if(element === user_id_want_delete){
+          object.splice(number, 1);
+        }
+      })
+      // console.log(value.friend_id.length)
+      UserContact.update({
+        friend_id: value.friend_id
+      },{
+        where: {
+          id: value.id
+        }
+      }).then(userHadUpdate => {
+        return res.status(200).send(
+          new Response(true, CONSTANT.USER_DELETE_UPDATE_SUCCESS, null)
+        )
+      })
+    })
+  } else {
+    const response = new Response(false, CONSTANT.INVALID_VALUE, errs.array())
+    res.status(400).send(response)
+  }
+}
 
 const getListFriendRequestByPhoneUser = async (req, res) => {
   const errs = validationResult(req).formatWith(errorFormatter) // format chung
@@ -286,9 +301,6 @@ const getTextSearch = async (req, res) => {
   }
 }
 
-
-
-
 module.exports = {
   addFriend: addFriend,
   getALLlistUserRequest: getALLlistUserRequest,
@@ -297,6 +309,7 @@ module.exports = {
   getListFriendRequestByPhoneUser: getListFriendRequestByPhoneUser,
   getListFriendContactByPhoneUser: getListFriendContactByPhoneUser,
   getListPhoneBookByPhoneUser: getListPhoneBookByPhoneUser,
-  getTextSearch: getTextSearch
+  getTextSearch: getTextSearch,
+  deleteFriend: deleteFriend
 
 }

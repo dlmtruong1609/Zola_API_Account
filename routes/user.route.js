@@ -26,4 +26,6 @@ router.get('/api/v0/users/getListFriendPhoneBookByPhoneUser', userValidator.vali
 
 router.get('/api/v0/users/textSearch', userValidator.validateTextSearch(), userRequestService.getTextSearch)
 
+router.post('/api/v0/users/deleteFriend', userValidator.validateDeleteFriend(), userRequestService.deleteFriend)
+
 module.exports = router

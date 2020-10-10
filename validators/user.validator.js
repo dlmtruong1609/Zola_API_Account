@@ -139,6 +139,26 @@ const validatePhoneUserRequest  = () => {
   ]
 }
 
+const validateDeleteFriend  = () => {
+  return [
+    check('user_id').custom((value, { req }) => {
+      return Account.findByPk(req.body.user_id).then((account) => {
+        if (!account) {
+          return Promise.reject(CONSTANT.USER_NOT_FOUND)
+        }
+      })
+    }),
+    check('user_id_want_delete').custom(async (value, { req }) => {
+      const user_id = req.body.user_id
+      console.log(`SELECT * FROM public."UserContacts" where '${value}'=ANY(friend_id) AND user_id='${user_id}'`)
+      const result = await db.sequelize.query(`SELECT * FROM public."UserContacts" where '${value}'=ANY(friend_id) AND user_id='${user_id}'`)
+      if (result[1].rowCount === 0) {
+        return Promise.reject(CONSTANT.USER_DELETE_NOT_FOUND)
+      }
+    })
+  ]
+}
+
 const validateTextSearch = () => {
   return [
     check('value', CONSTANT.NAME_IS_REQUIRED).not().isEmpty()
@@ -153,5 +173,6 @@ module.exports = {
   validateAccepFriend: validateAccepFriend,
   validateDeclineFriend: validateDeclineFriend,
   validatePhoneUserRequest: validatePhoneUserRequest,
-  validateTextSearch: validateTextSearch
+  validateTextSearch: validateTextSearch,
+  validateDeleteFriend: validateDeleteFriend
 }
