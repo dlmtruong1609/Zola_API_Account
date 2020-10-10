@@ -245,7 +245,7 @@ const getListPhoneBookByPhoneUser = async (req, res) => {
   // user phone
   const user_phone = req.query.phone
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-    const result = await db.sequelize.query(`select * from public."Accounts" a join public."UserPhoneBooks" b on a.id = b.user_id where a.phone='${user_phone}'`)
+    const result = await db.sequelize.query(`select * from public."Accounts" a join public."UserPhoneBooks" b on a.id = cast(b.user_id as int) where a.phone='${user_phone}'`)
     if(typeof result[0][0] === 'undefined'){
       return res.status(200).send(
         new Response(false, CONSTANT.DONT_HAVE_ANY_FRIEND_BOOK, null)
