@@ -60,26 +60,40 @@ const validateUpdate = () => {
 
 const validateAddFriend = () => {
   return [
+    check('user_id', CONSTANT.USER_ID_IS_REQUIRED).not().isEmpty(),
     check('user_id').custom((value, { req }) => {
       return Account.findByPk(req.body.user_id).then((account) => {
         if (!account) {
-          return Promise.reject(CONSTANT.USER_NOT_FOUND)
+          return Promise.reject(CONSTANT.USER_ID_NOT_FOUND)
         }
       })
+    }),
+    check('user_request_id', CONSTANT.USER_ID_WANT_ADD_FRIEND_IS_REQUIRED).not().isEmpty(),
+    check('user_request_id').custom( async (value, { req }) => {
+      const user_id = req.body.user_id
+      if ( user_id === value ){
+        return Promise.reject(CONSTANT.USER_ID_WANT_ADD_FRIEND_INVALID)
+      }
     }),
     check('user_request_id').custom((value, { req }) => {
       return Account.findByPk(req.body.user_request_id).then((account) => {
         if (!account) {
-          return Promise.reject(CONSTANT.NOT_FOUND_USER_CONTACT)
+          return Promise.reject(CONSTANT.USER_ID_WANT_ADD_FRIEND_NOT_FOUND)
         }
       })
     }),
     check('user_request_id').custom(async (value, { req }) => {
       const user_id = req.body.user_id
-      const result = await db.sequelize.query(`SELECT * FROM public."UserRequests" where ${value}=ANY(user_request_id) AND user_id=${user_id};`)
-      
+      const result = await db.sequelize.query(`SELECT * FROM public."UserRequests" where ${user_id}=ANY(user_request_id) AND user_id=${value};`)
       if (result[1].rowCount === 1) {
-        return Promise.reject(CONSTANT.USER_EXISTS_IN_USERREQUEST)
+        return Promise.reject(CONSTANT.USER_ID_WANT_ADD_FRIEND_HAD_EXISTS)
+      }
+    }),
+    check('user_id').custom(async (value, { req }) => {
+      const user_request_id = req.body.user_request_id
+      const result = await db.sequelize.query(`SELECT * FROM public."UserRequests" where ${user_request_id}=ANY(user_request_id) AND user_id=${value};`)
+      if (result[1].rowCount === 1) {
+        return Promise.reject(CONSTANT.REQUIRED_REDIRECT_TO_ACCEPT_FRIEND)
       }
     })
   ]
@@ -93,6 +107,12 @@ const validateAccepFriend = () => {
           return Promise.reject(CONSTANT.USER_NOT_FOUND)
         }
       })
+    }),
+    check('user_id_want_accept').custom(async (value, { req }) => {
+      const user_id = req.body.user_id
+      if (value === user_id){
+        return Promise.reject(CONSTANT.USER_WANT_ACCEPT_INVALID)
+      }
     }),
     check('user_id_want_accept').custom(async (value, { req }) => {
       const user_id = req.body.user_id

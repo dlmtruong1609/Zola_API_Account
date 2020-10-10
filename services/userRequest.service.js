@@ -27,36 +27,37 @@ const addFriend = (req, res) => {
   const errs = validationResult(req).formatWith(errorFormatter) // format chung
   const user_id = req.body.user_id // Đây là id của chính user đó
   const user_request_id = req.body.user_request_id // Đây là id của user mà user đó muốn kết bạn
+  console.log(errs.array().length)
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-    UserRequest.findOne({ where:{user_id: parseInt(user_id)} }).then(userRequestFind => {
-      // console.log(userRequestFind)
-      // khoi tao user neu lan dau tao
+    UserRequest.findOne({
+      where: {user_id: user_request_id }
+    }).then(userRequestFind => {
       if (userRequestFind === null) {
-        const initListUserRequest = [];
-        initListUserRequest.push(user_request_id);
+        //khoi tao lan dau
+        const listUserRequest = [];
+        listUserRequest.push(user_id);
         UserRequest.create({
-          user_id: user_id.toString(),
-          user_request_id: initListUserRequest
-        }).then(value => {
-          return res.status(200).send(new Response(true, CONSTANT.WAITING_USER_ACCEPT, null))
+          user_id: user_request_id,
+          user_request_id: listUserRequest
+        }).then( resultInitUserRequest => {
+          return res.status(200).send(new Response(true, CONSTANT.WAITING_USER_ACCEPT, null));
+        })
+      } else {
+        //da khoi tao
+        userRequestFind.user_request_id.push(user_id);
+        UserRequest.update({
+          user_request_id: userRequestFind.user_request_id
+        },{
+          where : { id : userRequestFind.id}
+        }).then( resultUpdateUserRequest => {
+          return res.status(200).send(new Response(true, CONSTANT.WAITING_USER_ACCEPT, null));
         })
       }
-      //neu user ton tai thi them user nay vao
-      userRequestFind.user_request_id.push(parseInt(user_request_id));
-      console.log(userRequestFind)
-      UserRequest.update({
-        user_request_id: userRequestFind.user_request_id
-      },{
-        where : {id: userRequestFind.id}
-      }).then(value => {
-        return res.status(200).send(new Response(true, CONSTANT.WAITING_USER_ACCEPT, null))
-      })
-    })
+    });
   } else {
     const response = new Response(false, CONSTANT.INVALID_VALUE, errs.array())
     res.status(400).send(response)
   }
- 
 }
 
 const getALLlistUserRequest = (req, res) => {
@@ -292,7 +293,7 @@ const getTextSearch = async (req, res) => {
       )
     }else{
       return res.status(200).send(
-        new Response(false, CONSTANT.FIND_SUCCESS, result[0])
+        new Response(true, CONSTANT.FIND_SUCCESS, result[0])
       )
     }
   } else {
@@ -311,5 +312,4 @@ module.exports = {
   getListPhoneBookByPhoneUser: getListPhoneBookByPhoneUser,
   getTextSearch: getTextSearch,
   deleteFriend: deleteFriend
-
 }
