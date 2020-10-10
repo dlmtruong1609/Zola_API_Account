@@ -269,14 +269,15 @@ const getTextSearch = async (req, res) => {
   const errs = validationResult(req).formatWith(errorFormatter) // format chung
   const value = req.query.value
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-    const result = await db.sequelize.query(`SELECT * FROM public."Accounts" WHERE  to_tsvector(email || ' ' || name || ' ' || phone) @@ to_tsquery('${value}')`)
+    console.log(`SELECT * FROM public."Accounts" WHERE  to_tsvector(email || ' ' || name || ' ' || phone) @@ to_tsquery('${value}')`);
+    const result = await db.sequelize.query(`SELECT * FROM public."Accounts" WHERE phone @@ to_tsquery('${value}:*') or name @@ to_tsquery('${value}:*') or  email @@ to_tsquery('${value}:*')`)
     if(typeof result[0][0] === 'undefined'){
       return res.status(200).send(
         new Response(false, CONSTANT.USER_NOT_FOUND, null)
       )
     }else{
       return res.status(200).send(
-        new Response(false, CONSTANT.FIND_SUCCESS, result[0][0])
+        new Response(false, CONSTANT.FIND_SUCCESS, result[0])
       )
     }
   } else {
