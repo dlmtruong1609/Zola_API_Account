@@ -57,12 +57,19 @@ module.exports.USER_EXISTS_IN_USERCONTACT = 'users had existst in user contact'
 //accept friend 
 module.exports.USER_ID_IS_REQUIRED = 'user id is required'
 module.exports.USER_ID_NOT_FOUND = 'user id not found'
-module.exports.USER_ID_WANT_ADD_FRIEND_IS_REQUIRED = "user want add friend is required"
+module.exports.USER_ID_WANT_ADD_FRIEND_IS_REQUIRED = "user id want add friend is required"
 module.exports.USER_ID_WANT_ADD_FRIEND_NOT_FOUND = 'user id want add friend not found'
 module.exports.USER_ID_WANT_ADD_FRIEND_INVALID = 'user id want add friend invalid'
 module.exports.USER_ID_WANT_ADD_FRIEND_HAD_EXISTS = 'user id want add friend had existed'
 module.exports.WAITING_USER_ACCEPT = 'waiting user accept'
 module.exports.REQUIRED_REDIRECT_TO_ACCEPT_FRIEND = 'please redirect to uri accept friend to accept'
+
+//decline friend
+module.exports.USER_ID_WANT_DECLINE_FRIEND_IS_REQUIRED = "user id want decline friend is required"
+module.exports.USER_ID_WANT_DECLINE_FRIEND_NOT_FOUND = 'user id want decline friend not found'
+module.exports.USER_ID_WANT_DECLINE_FRIEND_INVALID = 'user id want decline friend invalid'
+module.exports.NOT_FOUND_USER_ID_WANT_DECLINE = 'not found user want decline'
+
 
 module.exports.USER_CONTACT_INVALID = 'user contact invalid'
 module.exports.SEND_MAIL_FAILED = 'Has problem when send email'

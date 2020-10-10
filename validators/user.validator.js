@@ -126,6 +126,7 @@ const validateAccepFriend = () => {
 
 const validateDeclineFriend = () => {
   return [
+    check('user_id', CONSTANT.USER_ID_IS_REQUIRED).not().isEmpty(),
     check('user_id').custom((value, { req }) => {
       return Account.findByPk(req.body.user_id).then((account) => {
         if (!account) {
@@ -133,11 +134,18 @@ const validateDeclineFriend = () => {
         }
       })
     }),
+    check('user_id_want_decline', CONSTANT.USER_ID_WANT_DECLINE_FRIEND_IS_REQUIRED).not().isEmpty(),
+    check('user_id_want_decline').custom(async (value, { req }) => {
+      const user_id = req.body.user_id
+      if(user_id === value){
+        return Promise.reject(CONSTANT.USER_ID_WANT_DECLINE_FRIEND_INVALID)
+      }
+    }),
     check('user_id_want_decline').custom(async (value, { req }) => {
       const user_id = req.body.user_id
       const result = await db.sequelize.query(`SELECT * FROM public."UserRequests" where ${value}=ANY(user_request_id) AND user_id=${user_id};`)
       if (result[1].rowCount === 0) {
-        return Promise.reject(CONSTANT.USER_DECLINE_NOT_FOUND)
+        return Promise.reject(CONSTANT.NOT_FOUND_USER_ID_WANT_DECLINE)
       }
     })
   ]
