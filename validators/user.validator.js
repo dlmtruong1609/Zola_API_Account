@@ -78,25 +78,41 @@ const validateDelete = () => {
 }
 const validateAddFriend = () => {
   return [
+    check('user_id', CONSTANT.USER_ID_IS_REQUIRED).not().isEmpty(),
     check('user_id').custom((value, { req }) => {
       return Account.findByPk(req.body.user_id).then((account) => {
         if (!account) {
-          return Promise.reject(CONSTANT.USER_NOT_FOUND)
+          return Promise.reject(CONSTANT.USER_ID_NOT_FOUND)
         }
       })
+    }),
+    check('user_request_id', CONSTANT.USER_ID_WANT_ADD_FRIEND_IS_REQUIRED).not().isEmpty(),
+    check('user_request_id').custom(async (value, { req }) => {
+      const user_id = req.body.user_id
+      if (user_id === value) {
+        return Promise.reject(CONSTANT.USER_ID_WANT_ADD_FRIEND_INVALID)
+      }
     }),
     check('user_request_id').custom((value, { req }) => {
       return Account.findByPk(req.body.user_request_id).then((account) => {
         if (!account) {
-          return Promise.reject(CONSTANT.NOT_FOUND_USER_CONTACT)
+          return Promise.reject(CONSTANT.USER_ID_WANT_ADD_FRIEND_NOT_FOUND)
         }
       })
     }),
     check('user_request_id').custom(async (value, { req }) => {
       const user_id = req.body.user_id
-      const result = await db.sequelize.query(`SELECT * FROM public."UserRequests" where ${value}=ANY(user_request_id) AND user_id=${user_id};`)
+
+      const result = await db.sequelize.query(`SELECT * FROM public."UserRequests" where ${user_id}=ANY(user_request_id) AND user_id=${value};`)
       if (result[1].rowCount === 1) {
-        return Promise.reject(CONSTANT.USER_EXISTS_IN_USERREQUEST)
+        return Promise.reject(CONSTANT.USER_ID_WANT_ADD_FRIEND_HAD_EXISTS)
+      }
+    }),
+    check('user_id').custom(async (value, { req }) => {
+      const user_request_id = req.body.user_request_id
+      const result = await db.sequelize.query(`SELECT * FROM public."UserRequests" where ${user_request_id}=ANY(user_request_id) AND user_id=${value};`)
+      if (result[1].rowCount === 1) {
+        return Promise.reject(CONSTANT.REQUIRED_REDIRECT_TO_ACCEPT_FRIEND)
       }
     })
   ]
@@ -113,6 +129,12 @@ const validateAccepFriend = () => {
     }),
     check('user_id_want_accept').custom(async (value, { req }) => {
       const user_id = req.body.user_id
+      if (value === user_id) {
+        return Promise.reject(CONSTANT.USER_WANT_ACCEPT_INVALID)
+      }
+    }),
+    check('user_id_want_accept').custom(async (value, { req }) => {
+      const user_id = req.body.user_id
       const result = await db.sequelize.query(`SELECT * FROM public."UserRequests" where ${value}=ANY(user_request_id) AND user_id=${user_id};`)
       if (result[1].rowCount === 0) {
         return Promise.reject(CONSTANT.USER_ACCEPT_NOT_FOUND)
@@ -123,6 +145,7 @@ const validateAccepFriend = () => {
 
 const validateDeclineFriend = () => {
   return [
+    check('user_id', CONSTANT.USER_ID_IS_REQUIRED).not().isEmpty(),
     check('user_id').custom((value, { req }) => {
       return Account.findByPk(req.body.user_id).then((account) => {
         if (!account) {
@@ -130,11 +153,18 @@ const validateDeclineFriend = () => {
         }
       })
     }),
+    check('user_id_want_decline', CONSTANT.USER_ID_WANT_DECLINE_FRIEND_IS_REQUIRED).not().isEmpty(),
+    check('user_id_want_decline').custom(async (value, { req }) => {
+      const user_id = req.body.user_id
+      if (user_id === value) {
+        return Promise.reject(CONSTANT.USER_ID_WANT_DECLINE_FRIEND_INVALID)
+      }
+    }),
     check('user_id_want_decline').custom(async (value, { req }) => {
       const user_id = req.body.user_id
       const result = await db.sequelize.query(`SELECT * FROM public."UserRequests" where ${value}=ANY(user_request_id) AND user_id=${user_id};`)
       if (result[1].rowCount === 0) {
-        return Promise.reject(CONSTANT.USER_DECLINE_NOT_FOUND)
+        return Promise.reject(CONSTANT.NOT_FOUND_USER_ID_WANT_DECLINE)
       }
     })
   ]
@@ -156,6 +186,26 @@ const validatePhoneUserRequest = () => {
   ]
 }
 
+const validateDeleteFriend = () => {
+  return [
+    check('user_id').custom((value, { req }) => {
+      return Account.findByPk(req.body.user_id).then((account) => {
+        if (!account) {
+          return Promise.reject(CONSTANT.USER_NOT_FOUND)
+        }
+      })
+    }),
+    check('user_id_want_delete').custom(async (value, { req }) => {
+      const user_id = req.body.user_id
+      console.log(`SELECT * FROM public."UserContacts" where '${value}'=ANY(friend_id) AND user_id='${user_id}'`)
+      const result = await db.sequelize.query(`SELECT * FROM public."UserContacts" where '${value}'=ANY(friend_id) AND user_id='${user_id}'`)
+      if (result[1].rowCount === 0) {
+        return Promise.reject(CONSTANT.USER_DELETE_NOT_FOUND)
+      }
+    })
+  ]
+}
+
 const validateTextSearch = () => {
   return [
     check('value', CONSTANT.NAME_IS_REQUIRED).not().isEmpty()
@@ -171,5 +221,6 @@ module.exports = {
   validateAccepFriend: validateAccepFriend,
   validateDeclineFriend: validateDeclineFriend,
   validatePhoneUserRequest: validatePhoneUserRequest,
-  validateTextSearch: validateTextSearch
+  validateTextSearch: validateTextSearch,
+  validateDeleteFriend: validateDeleteFriend
 }

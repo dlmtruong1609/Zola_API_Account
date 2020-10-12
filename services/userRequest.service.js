@@ -23,30 +23,32 @@ const addFriend = (req, res) => {
   const errs = validationResult(req).formatWith(errorFormatter) // format chung
   const user_id = req.body.user_id // Đây là id của chính user đó
   const user_request_id = req.body.user_request_id // Đây là id của user mà user đó muốn kết bạn
+  console.log(errs.array().length)
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-    UserRequest.findOne({ where: { user_id: parseInt(user_id) } }).then(userRequestFind => {
-      // console.log(userRequestFind)
-      // khoi tao user neu lan dau tao
+    UserRequest.findOne({
+      where: { user_id: user_request_id }
+    }).then(userRequestFind => {
       if (userRequestFind === null) {
-        const initListUserRequest = []
-        initListUserRequest.push(user_request_id)
+        // khoi tao lan dau
+        const listUserRequest = []
+        listUserRequest.push(user_id)
         UserRequest.create({
-          user_id: user_id.toString(),
-          user_request_id: initListUserRequest
-        }).then(value => {
+          user_id: user_request_id,
+          user_request_id: listUserRequest
+        }).then(resultInitUserRequest => {
+          return res.status(200).send(new Response(true, CONSTANT.WAITING_USER_ACCEPT, null))
+        })
+      } else {
+        // da khoi tao
+        userRequestFind.user_request_id.push(user_id)
+        UserRequest.update({
+          user_request_id: userRequestFind.user_request_id
+        }, {
+          where: { id: userRequestFind.id }
+        }).then(resultUpdateUserRequest => {
           return res.status(200).send(new Response(true, CONSTANT.WAITING_USER_ACCEPT, null))
         })
       }
-      // neu user ton tai thi them user nay vao
-      userRequestFind.user_request_id.push(parseInt(user_request_id))
-      console.log(userRequestFind)
-      UserRequest.update({
-        user_request_id: userRequestFind.user_request_id
-      }, {
-        where: { id: userRequestFind.id }
-      }).then(value => {
-        return res.status(200).send(new Response(true, CONSTANT.WAITING_USER_ACCEPT, null))
-      })
     })
   } else {
     const response = new Response(false, CONSTANT.INVALID_VALUE, errs.array())
@@ -164,23 +166,39 @@ const declineFriend = (req, res) => {
   }
 }
 
-// const deleteFriend = (req, res) => {
-//   const errs = validationResult(req).formatWith(errorFormatter) // format chung
-//   // user phone
-//   const user_phone = req.query.phone
-//   // user phone want accept friend
-//   const user_phone_contact = req.query.phoneContact
-//   // if userPhone equal userPhoneContact then  return error
-//   if (user_phone === user_phone_contact) {
-//     return new Response(false, CONSTANT.USER_CONTACT_INVALID, null)
-//   }
-//   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
+const deleteFriend = (req, res) => {
+  const errs = validationResult(req).formatWith(errorFormatter) // format chung
+  // user phone
+  const user_id = req.body.user_id
+  // user phone want accept friend
+  const user_id_want_delete = req.body.user_id_want_delete
 
-//   } else {
-//     const response = new Response(false, CONSTANT.INVALID_VALUE, errs.array())
-//     res.status(400).send(response)
-//   }
-// }
+  if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
+    UserContact.findOne({ where: { user_id: user_id } }).then(value => {
+      // console.log(value.friend_id.length)
+      value.friend_id.forEach((element, number, object) => {
+        if (element === user_id_want_delete) {
+          object.splice(number, 1)
+        }
+      })
+      // console.log(value.friend_id.length)
+      UserContact.update({
+        friend_id: value.friend_id
+      }, {
+        where: {
+          id: value.id
+        }
+      }).then(userHadUpdate => {
+        return res.status(200).send(
+          new Response(true, CONSTANT.USER_DELETE_UPDATE_SUCCESS, null)
+        )
+      })
+    })
+  } else {
+    const response = new Response(false, CONSTANT.INVALID_VALUE, errs.array())
+    res.status(400).send(response)
+  }
+}
 
 const getListFriendRequestByPhoneUser = async (req, res) => {
   const errs = validationResult(req).formatWith(errorFormatter) // format chung
@@ -238,7 +256,7 @@ const getListPhoneBookByPhoneUser = async (req, res) => {
   // user phone
   const user_phone = req.query.phone
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-    const result = await db.sequelize.query(`select * from public."Accounts" a join public."UserPhoneBooks" b on a.id = b.user_id where a.phone='${user_phone}'`)
+    const result = await db.sequelize.query(`select * from public."Accounts" a join public."UserPhoneBooks" b on a.id = cast(b.user_id as int) where a.phone='${user_phone}'`)
     if (typeof result[0][0] === 'undefined') {
       return res.status(200).send(
         new Response(false, CONSTANT.DONT_HAVE_ANY_FRIEND_BOOK, null)
@@ -262,14 +280,15 @@ const getTextSearch = async (req, res) => {
   const errs = validationResult(req).formatWith(errorFormatter) // format chung
   const value = req.query.value
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-    const result = await db.sequelize.query(`SELECT * FROM public."Accounts" WHERE  to_tsvector(email || ' ' || name || ' ' || phone) @@ to_tsquery('${value}')`)
+    console.log(`SELECT * FROM public."Accounts" WHERE  to_tsvector(email || ' ' || name || ' ' || phone) @@ to_tsquery('${value}')`)
+    const result = await db.sequelize.query(`SELECT * FROM public."Accounts" WHERE phone @@ to_tsquery('${value}:*') or name @@ to_tsquery('${value}:*') or  email @@ to_tsquery('${value}:*')`)
     if (typeof result[0][0] === 'undefined') {
       return res.status(200).send(
         new Response(false, CONSTANT.USER_NOT_FOUND, null)
       )
     } else {
       return res.status(200).send(
-        new Response(false, CONSTANT.FIND_SUCCESS, result[0][0])
+        new Response(true, CONSTANT.FIND_SUCCESS, result[0])
       )
     }
   } else {
@@ -286,6 +305,6 @@ module.exports = {
   getListFriendRequestByPhoneUser: getListFriendRequestByPhoneUser,
   getListFriendContactByPhoneUser: getListFriendContactByPhoneUser,
   getListPhoneBookByPhoneUser: getListPhoneBookByPhoneUser,
-  getTextSearch: getTextSearch
-
+  getTextSearch: getTextSearch,
+  deleteFriend: deleteFriend
 }
