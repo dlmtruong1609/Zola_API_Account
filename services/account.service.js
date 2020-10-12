@@ -246,7 +246,11 @@ const verifyOtpSignUp = async (req, res) => {
       .verificationChecks
       .create({ to: email, code: code })
       .then(async verificationCheck => {
-        res.status(200).send(new Response(false, CONSTANT.CODE_VERIFIED, { accessToken, refreshToken }))
+        if (verificationCheck.valid) {
+          res.status(200).send(new Response(false, CONSTANT.CODE_VERIFIED, { accessToken, refreshToken }))
+        } else {
+          res.status(400).send(new Response(true, 'Code is used or expired', null))
+        }
       }).catch(_err => {
         res.status(400).send(new Response(true, 'Code is used or expired', null))
       })
@@ -316,7 +320,11 @@ const verifyCodeChangePassword = async (req, res) => {
           )
           //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
           tokenList[refreshToken] = { accessToken, refreshToken }
-          res.status(200).send(new Response(false, CONSTANT.CODE_VERIFIED, { accessToken, refreshToken }))
+          if (verificationCheck.valid) {
+            res.status(200).send(new Response(false, CONSTANT.CODE_VERIFIED, { accessToken, refreshToken }))
+          } else {
+            res.status(400).send(new Response(true, 'Code is used or expired', null))
+          }
         })
       }).catch(_err => {
         res.status(400).send(new Response(true, 'Code is used or expired', null))
