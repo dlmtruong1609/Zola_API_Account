@@ -74,15 +74,16 @@ const getALLlistUserRequest = (req, res) => {
     })
 }
 
-const acceptFriend = (req, res) => {
+const acceptFriend = async (req, res) => {
   const errs = validationResult(req).formatWith(errorFormatter) // format chung
   // user phone
   const user_id = req.body.user_id
+
   // user phone want accept friend
   const user_id_want_accept = req.body.user_id_want_accept
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
     //xu ly user contact thu 1
-    UserRequest.findOne({ where: { user_id: user_id } }).then(value => {
+    UserRequest.findOne({ where: { user_id: user_id } }).then(async value => {
       value.user_request_id.forEach((element, number, object) => {
         if (element === parseInt(user_id_want_accept)) {
           object.splice(number, 1);
@@ -96,55 +97,50 @@ const acceptFriend = (req, res) => {
           id: value.id
         }
       })
-      UserContact.findOne({
-        user_id: value.user_id
-      }).then(userContactCreate => {
-        //neu khoi tao lan dau
-        const listFriendContactOne = [];
-    
-        if (userContactCreate === null) {
-          listFriendContactOne.push(user_id_want_accept)
-          UserContact.create({
-            user_id: user_id,
-            friend_id: listFriendContactOne
-          })
-        } else {
-          userContactCreate.friend_id.push(user_id_want_accept);
-          UserContact.update({
-            friend_id: userContactCreate.friend_id
-          },{
-            where: {
-              id: userContactCreate.id
-            }
-          }).then(x => {
-            return res.status(200).send(
-              new Response(true, "shit", x)
-            )
-          })
-        }
-      })
-    })
-    //xu ly user contact thu 2
-    const listFriendContactTwo = [];
-    UserRequest.findOne({ where: { user_id: user_id_want_accept } }).then(userContactCreateTwo => {
-      //neu khoi tao lan dau
-      if (userContactCreateTwo === null) {
-        listFriendContactTwo.push(user_id);
+
+      //user one
+      // neu khoi tao lan dau
+      const listFriendContactOne = [];
+      const result = await db.sequelize.query(`select * from public."UserContacts" where user_id='${user_id}'`)
+      if (typeof result[0][0] === 'undefined') {
+        listFriendContactOne.push(user_id_want_accept)
         UserContact.create({
-          user_id: user_id_want_accept,
-          friend_id: listFriendContactTwo
+          user_id: user_id,
+          friend_id: listFriendContactOne
         })
       } else {
-        userContactCreateTwo.friend_id.push(user_id);
+        result[0][0].friend_id.push(user_id_want_accept);
         UserContact.update({
-          friend_id: userContactCreateTwo.friend_id
-        },{
+          friend_id: result[0][0].friend_id
+        }, {
           where: {
-            id: userContactCreateTwo.id
+            id: result[0][0].id
           }
         })
       }
     })
+
+    //userTwo
+    // neu khoi tao lan dau
+    const listFriendContactTwo = [];
+    const resultUserTwo = await db.sequelize.query(`select * from public."UserContacts" where user_id='${user_id_want_accept}'`)
+    if (typeof resultUserTwo[0][0] === 'undefined') {
+      listFriendContactTwo.push(user_id)
+      UserContact.create({
+        user_id: user_id_want_accept,
+        friend_id: listFriendContactTwo
+      })
+    } else {
+      resultUserTwo[0][0].friend_id.push(user_id);
+      UserContact.update({
+        friend_id: resultUserTwo[0][0].friend_id
+      }, {
+        where: {
+          id: resultUserTwo[0][0].id
+        }
+      })
+    }
+
     // tao room chung vi ca 2 dieu kien tren deu thanh cong 
     room.create({
       name: null,
