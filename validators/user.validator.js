@@ -114,12 +114,20 @@ const validateAddFriend = () => {
       if (result[1].rowCount === 1) {
         return Promise.reject(CONSTANT.REQUIRED_REDIRECT_TO_ACCEPT_FRIEND)
       }
+    }),
+    check('user_id').custom(async (value, { req }) => {
+      const user_request_id = req.body.user_request_id
+      const result = await db.sequelize.query(`SELECT * FROM public."UserContacts" where '${value}'=ANY(friend_id) AND user_id='${user_request_id}';`)
+      if (result[1].rowCount === 1) {
+        return Promise.reject(CONSTANT.USER_ID_HAD_ADDED_FRIEND)
+      }
     })
   ]
 }
 
 const validateAccepFriend = () => {
   return [
+    check('user_id', CONSTANT.USER_ID_IS_REQUIRED).not().isEmpty(),
     check('user_id').custom((value, { req }) => {
       return Account.findByPk(req.body.user_id).then((account) => {
         if (!account) {
@@ -127,6 +135,7 @@ const validateAccepFriend = () => {
         }
       })
     }),
+    check('user_id_want_accept', CONSTANT.USER_ID_WANT_ACCEPT_FRIEND_IS_REQUIRED).not().isEmpty(),
     check('user_id_want_accept').custom(async (value, { req }) => {
       const user_id = req.body.user_id
       if (value === user_id) {

@@ -76,13 +76,13 @@ const acceptFriend = (req, res) => {
   // user phone want accept friend
   const user_id_want_accept = req.body.user_id_want_accept
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
+    // xu ly user contact thu 1
     UserRequest.findOne({ where: { user_id: user_id } }).then(value => {
       value.user_request_id.forEach((element, number, object) => {
         if (element === parseInt(user_id_want_accept)) {
           object.splice(number, 1)
         }
       })
-      console.log(value)
       // move user request to user contact
       UserRequest.update({
         user_request_id: value.user_request_id
@@ -95,39 +95,70 @@ const acceptFriend = (req, res) => {
         user_id: value.user_id
       }).then(userContactCreate => {
         // neu khoi tao lan dau
+        const listFriendContactOne = []
+
         if (userContactCreate === null) {
+          listFriendContactOne.push(user_id_want_accept)
           UserContact.create({
             user_id: user_id,
-            friend_id: [...user_id_want_accept]
+            friend_id: listFriendContactOne
           })
         } else {
           userContactCreate.friend_id.push(user_id_want_accept)
-          userContactCreate.update({
+          UserContact.update({
             friend_id: userContactCreate.friend_id
+          }, {
+            where: {
+              id: userContactCreate.id
+            }
+          }).then(x => {
+            return res.status(200).send(
+              new Response(true, 'shit', x)
+            )
           })
         }
-        // tao room chung vi ca 2 dieu kien tren deu thanh cong
-        room.create({
-          name: null,
-          list_message: [],
-          type: null
-        }).then(roomCreate => {
-          userAttend.create({
-            room_id: roomCreate.id,
-            user_id: user_id
-          })
-
-          userAttend.create({
-            room_id: roomCreate.id,
-            user_id: user_id_want_accept
-          })
-            .then(userContactCreate => {
-              return res.status(200).send(
-                new Response(true, CONSTANT.USER_CONTACT_UPDATE_SUCCESS, null)
-              )
-            })
-        })
       })
+    })
+    // xu ly user contact thu 2
+    const listFriendContactTwo = []
+    UserRequest.findOne({ where: { user_id: user_id_want_accept } }).then(userContactCreateTwo => {
+      // neu khoi tao lan dau
+      if (userContactCreateTwo === null) {
+        listFriendContactTwo.push(user_id)
+        UserContact.create({
+          user_id: user_id_want_accept,
+          friend_id: listFriendContactTwo
+        })
+      } else {
+        userContactCreateTwo.friend_id.push(user_id)
+        UserContact.update({
+          friend_id: userContactCreateTwo.friend_id
+        }, {
+          where: {
+            id: userContactCreateTwo.id
+          }
+        })
+      }
+    })
+    // tao room chung vi ca 2 dieu kien tren deu thanh cong
+    room.create({
+      name: null,
+      list_message: [],
+      type: null
+    }).then(roomCreate => {
+      userAttend.create({
+        room_id: roomCreate.id,
+        user_id: user_id
+      })
+      userAttend.create({
+        room_id: roomCreate.id,
+        user_id: user_id_want_accept
+      })
+        .then(userContactCreate => {
+          return res.status(200).send(
+            new Response(true, CONSTANT.USER_CONTACT_UPDATE_SUCCESS, null)
+          )
+        })
     })
   } else {
     const response = new Response(false, CONSTANT.INVALID_VALUE, errs.array())
