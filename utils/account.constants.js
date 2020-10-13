@@ -54,11 +54,10 @@ module.exports.DONT_HAVE_ANY_FRIEND_BOOK = 'dont have any friend phone book'
 module.exports.USER_EXISTS_IN_USERREQUEST = 'users had existst in user request'
 module.exports.USER_EXISTS_IN_USERCONTACT = 'users had existst in user contact'
 
-
-//add friend 
+// add friend
 module.exports.USER_ID_IS_REQUIRED = 'user id is required'
 module.exports.USER_ID_NOT_FOUND = 'user id not found'
-module.exports.USER_ID_WANT_ADD_FRIEND_IS_REQUIRED = "user id want add friend is required"
+module.exports.USER_ID_WANT_ADD_FRIEND_IS_REQUIRED = 'user id want add friend is required'
 module.exports.USER_ID_WANT_ADD_FRIEND_NOT_FOUND = 'user id want add friend not found'
 module.exports.USER_ID_WANT_ADD_FRIEND_INVALID = 'user id want add friend invalid'
 module.exports.USER_ID_WANT_ADD_FRIEND_HAD_EXISTS = 'user id want add friend had existed'
@@ -66,15 +65,15 @@ module.exports.WAITING_USER_ACCEPT = 'waiting user accept'
 module.exports.REQUIRED_REDIRECT_TO_ACCEPT_FRIEND = 'please redirect to uri accept friend to accept'
 module.exports.USER_ID_HAD_ADDED_FRIEND = 'user id and user request had becomed friend'
 
-//decline friend
-module.exports.USER_ID_WANT_DECLINE_FRIEND_IS_REQUIRED = "user id want decline friend is required"
+// decline friend
+module.exports.USER_ID_WANT_DECLINE_FRIEND_IS_REQUIRED = 'user id want decline friend is required'
 module.exports.USER_ID_WANT_DECLINE_FRIEND_NOT_FOUND = 'user id want decline friend not found'
 module.exports.USER_ID_WANT_DECLINE_FRIEND_INVALID = 'user id want decline friend invalid'
 module.exports.NOT_FOUND_USER_ID_WANT_DECLINE = 'not found user want decline'
 
-//accept friend 
-module.exports.USER_ID_WANT_ACCEPT_FRIEND_IS_REQUIRED = "user id want accept friend is required"
-module.exports.USER_WANT_ACCEPT_INVALID="user want accept invalid"
+// accept friend
+module.exports.USER_ID_WANT_ACCEPT_FRIEND_IS_REQUIRED = 'user id want accept friend is required'
+module.exports.USER_WANT_ACCEPT_INVALID = 'user want accept invalid'
 
 module.exports.USER_CONTACT_INVALID = 'user contact invalid'
 module.exports.SEND_MAIL_FAILED = 'Has problem when send email'
@@ -85,4 +84,3 @@ module.exports.USER_DELETE_NOT_FOUND = 'User want delete not found'
 module.exports.USER_CONTACT_UPDATE_SUCCESS = 'User contact update success'
 module.exports.USER_DECLINE_UPDATE_SUCCESS = 'User want decline update success'
 module.exports.USER_DELETE_UPDATE_SUCCESS = 'User want delete update success'
-

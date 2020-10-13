@@ -1,4 +1,3 @@
-/* eslint-disable no-const-assign */
 module.exports = (sequelize, Sequelize) => {
   const Account = sequelize.define('Account', {
     phone: {
