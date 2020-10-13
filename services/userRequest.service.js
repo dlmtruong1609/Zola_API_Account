@@ -141,26 +141,26 @@ const acceptFriend = async (req, res) => {
       })
     }
 
-    // tao room chung vi ca 2 dieu kien tren deu thanh cong 
-    room.create({
-      name: null,
-      list_message: [],
-      type: null
-    }).then(roomCreate => {
-      userAttend.create({
-        room_id: roomCreate.id,
-        user_id: user_id
-      })
-      userAttend.create({
-        room_id: roomCreate.id,
-        user_id: user_id_want_accept
-      })
-        .then(userContactCreate => {
-          return res.status(200).send(
-            new Response(true, CONSTANT.USER_CONTACT_UPDATE_SUCCESS, null)
-          )
-        })
-    });
+    // // tao room chung vi ca 2 dieu kien tren deu thanh cong 
+    // room.create({
+    //   name: null,
+    //   list_message: [],
+    //   type: null
+    // }).then(roomCreate => {
+    //   userAttend.create({
+    //     room_id: roomCreate.id,
+    //     user_id: user_id
+    //   })
+    //   userAttend.create({
+    //     room_id: roomCreate.id,
+    //     user_id: user_id_want_accept
+    //   })
+    //     .then(userContactCreate => {
+    //       return res.status(200).send(
+    //         new Response(true, CONSTANT.USER_CONTACT_UPDATE_SUCCESS, null)
+    //       )
+    //     })
+    // });
   } else {
     const response = new Response(false, CONSTANT.INVALID_VALUE, errs.array())
     res.status(400).send(response)
@@ -220,12 +220,31 @@ const deleteFriend = (req, res) => {
         where: {
           id: value.id
         }
+      })
+    })
+
+    UserContact.findOne({ where: { user_id: user_id_want_delete } }).then(value => {
+      // console.log(value.friend_id.length)
+      value.friend_id.forEach((element, number, object) => {
+        if (element === user_id) {
+          object.splice(number, 1);
+        }
+      })
+      // console.log(value.friend_id.length)
+      UserContact.update({
+        friend_id: value.friend_id
+      }, {
+        where: {
+          id: value.id
+        }
       }).then(userHadUpdate => {
         return res.status(200).send(
           new Response(true, CONSTANT.USER_DELETE_UPDATE_SUCCESS, null)
         )
       })
     })
+
+
   } else {
     const response = new Response(false, CONSTANT.INVALID_VALUE, errs.array())
     res.status(400).send(response)
