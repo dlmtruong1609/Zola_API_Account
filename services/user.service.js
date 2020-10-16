@@ -22,6 +22,16 @@ const errorFormatter = ({ location, msg, param, value, nestedErrors }) => {
     param: param
   }
 }
+/**
+ * This is function update Profile of user had sign up by phone or email
+ * @param {*} req
+ * @param {*} res
+ * @param {headers} x-access-token
+ * @param {body} ...field
+ */
+const updateProfilePhoneOrEmail = (req, res) => {
+
+}
 
 /**
  * This is function update Profile of user
@@ -38,11 +48,12 @@ const updateProfile = async (req, res) => {
   const avatar = body.avatar
   const decoded = await jwtHelper.verifyToken(req.headers['x-access-token'], accessTokenSecret)
   const userDecode = decoded.data
-
+  const email = userDecode.email
+  const phone = userDecode.phone
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-    try {
+    if (phone) {
       Account.findOne({
-        where: { phone: userDecode.phone }
+        where: { phone: phone }
       }).then(user => {
         user.update({
           name: name,
@@ -51,8 +62,17 @@ const updateProfile = async (req, res) => {
           res.status(200).send(new Response(false, CONSTANT.UPDATE_PROFILE_SUCCESS, null))
         })
       })
-    } catch (error) {
-      res.status(400).json(new Response(true, error.message, null))
+    } else {
+      Account.findOne({
+        where: { email: email }
+      }).then(user => {
+        user.update({
+          name: name,
+          avatar: avatar
+        }).then((userUpdate) => {
+          res.status(200).send(new Response(false, CONSTANT.UPDATE_PROFILE_SUCCESS, null))
+        })
+      })
     }
   } else {
     const response = new Response(true, CONSTANT.INVALID_VALUE, errs.array())
