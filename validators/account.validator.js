@@ -1,4 +1,4 @@
-const { check } = require('express-validator')
+const { check, query } = require('express-validator')
 const bcrypt = require('bcryptjs')
 const db = require('../models')
 const Account = db.account
@@ -173,6 +173,36 @@ const validateChangePassword = () => {
   ]
 }
 
+const validateSendOtp = () => {
+  return [
+    query('phone').custom((value, { req }) => {
+      const phone = req.query.phone
+      const email = req.query.email
+      if (email || phone) {
+        return true
+      }
+      throw new Error('Please enter phone or email')
+    }),
+    query('phone').optional({ checkFalsy: true }).custom((value, { req }) => {
+      return Account.findOne({
+        where: { phone: value }
+      }).then((account) => {
+        if (account) {
+          return Promise.reject(CONSTANT.PHONE_HAD_SIGNUP)
+        }
+      })
+    }),
+    query('email').optional({ checkFalsy: true }).custom((value, { req }) => {
+      return Account.findOne({
+        where: { email: value }
+      }).then((account) => {
+        if (account) {
+          return Promise.reject(CONSTANT.EMAIL_HAD_SIGNUP)
+        }
+      })
+    })
+  ]
+}
 const validateActive = () => {
   return [
     check('phone').custom((value, { req }) => {
@@ -210,5 +240,6 @@ module.exports = {
   validateSignIn: validateSignIn,
   validateActive: validateActive,
   validateForgotPassword: validateForgotPassword,
-  validateChangePassword: validateChangePassword
+  validateChangePassword: validateChangePassword,
+  validateSendOtp: validateSendOtp
 }

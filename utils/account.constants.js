@@ -13,6 +13,8 @@ module.exports.SMS_FAILED = 'Send sms failed'
 module.exports.CODE_VERIFIED = 'Code verified'
 module.exports.DELETE_SUCCESS = 'Delete Success'
 // validator
+module.exports.PHONE_HAD_SIGNUP = 'Phone had sign up'
+module.exports.EMAIL_HAD_SIGNUP = 'Email had sign up'
 module.exports.NAME_IS_REQUIRED = 'Name is required'
 module.exports.PHONE_IS_REQUIRED = 'Phone is required'
 

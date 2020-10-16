@@ -11,7 +11,7 @@ router.put('/api/v0/accounts/passwords/change', accountValidator.validateChangeP
 
 router.post('/api/v0/accounts/signup', accountValidator.validateSignUp(), accountService.signup)
 
-router.get('/api/v0/accounts/active/send', accountValidator.validateActive(), accountService.sendOtpSignUp)
+router.get('/api/v0/accounts/active/send', accountValidator.validateSendOtp(), accountService.sendOtpSignUp)
 
 router.post('/api/v0/accounts/code/password/verify', accountValidator.validateActive(), accountService.verifyCodeChangePassword)
 

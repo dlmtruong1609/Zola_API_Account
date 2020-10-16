@@ -198,12 +198,16 @@ const signup = async (req, res) => {
 const sendOtpSignUp = async (req, res) => {
   const phone = req.query.phone
   const email = req.query.email
-  if (phone) {
-    sendSmsOTP(res, phone, CONSTANT.SEND_SUCCESS)
-  } else if (email) {
-    mailService.sendOtpEmail(res, email, CONSTANT.SEND_SUCCESS)
+  const errs = validationResult(req).formatWith(errorFormatter) // format chung
+  if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
+    if (phone) {
+      sendSmsOTP(res, phone, CONSTANT.SEND_SUCCESS)
+    } else {
+      mailService.sendOtpEmail(res, email, CONSTANT.SEND_SUCCESS)
+    }
   } else {
-    res.status(400).send(new Response(true, 'Please enter email or phone to valid otp', null))
+    const response = new Response(true, CONSTANT.INVALID_VALUE, errs.array())
+    res.send(response)
   }
 }
 
