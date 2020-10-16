@@ -8,6 +8,7 @@ const jwtHelper = require('../helpers/jwt.helper')
 var { validationResult } = require('express-validator')
 const CONSTANT = require('../utils/account.constants')
 require('dotenv').config()
+const phoneReg = require('./phone_verification')(process.env.API_KEY)
 const bcrypt = require('bcryptjs')
 const lengthPassword = 10
 // Biến cục bộ trên server này sẽ lưu trữ tạm danh sách token
@@ -29,8 +30,45 @@ const errorFormatter = ({ location, msg, param, value, nestedErrors }) => {
  * @param {headers} x-access-token
  * @param {body} ...field
  */
-const updateProfilePhoneOrEmail = (req, res) => {
-
+const updateProfilePhoneOrEmail = async (req, res) => {
+  const decoded = await jwtHelper.verifyToken(req.headers['x-access-token'], accessTokenSecret)
+  const userDecode = decoded.data
+  const email = userDecode.email
+  const phone = userDecode.phone
+  const errs = validationResult(req).formatWith(errorFormatter) // format chung
+  if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
+    if (email) {
+      // Khong the validate verify phone vi callback
+      await phoneReg.verifyPhoneToken(phone, '+84', req.body.code, async function (err, response) {
+        if (err) {
+          return res.status(400).send(new Response(true, 'Code is used or expired', null))
+        } else {
+          Account.findOne({
+            where: { email: email }
+          }).then(user => {
+            user.update({
+              phone: req.body.phone
+            }).then((userUpdate) => {
+              res.status(200).send(new Response(false, CONSTANT.UPDATE_PROFILE_SUCCESS, null))
+            })
+          })
+        }
+      })
+    } else {
+      Account.findOne({
+        where: { phone: phone }
+      }).then(user => {
+        user.update({
+          email: req.body.email
+        }).then((userUpdate) => {
+          res.status(200).send(new Response(false, CONSTANT.UPDATE_PROFILE_SUCCESS, null))
+        })
+      })
+    }
+  } else {
+    const response = new Response(true, CONSTANT.INVALID_VALUE, errs.array())
+    res.status(400).send(response)
+  }
 }
 
 /**
@@ -304,5 +342,6 @@ module.exports = {
   getALLlistUser: getALLlistUser,
   find: find,
   update: update,
-  deleteUser: deleteUser
+  deleteUser: deleteUser,
+  updateProfilePhoneOrEmail: updateProfilePhoneOrEmail
 }

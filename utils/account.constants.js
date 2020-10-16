@@ -17,6 +17,7 @@ module.exports.PHONE_HAD_SIGNUP = 'Phone had sign up'
 module.exports.EMAIL_HAD_SIGNUP = 'Email had sign up'
 module.exports.NAME_IS_REQUIRED = 'Name is required'
 module.exports.PHONE_IS_REQUIRED = 'Phone is required'
+module.exports.CODE_IS_REQUIRED = 'Code is required'
 
 module.exports.EMAIL_IS_REQUIRED = 'Email is required'
 module.exports.NAME_SIZE = 'Username > 6 and < 32 symbols'
