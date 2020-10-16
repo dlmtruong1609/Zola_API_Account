@@ -1,21 +1,48 @@
 /* eslint-disable camelcase */
-const { check, query } = require('express-validator')
+const { check, query, header } = require('express-validator')
 const db = require('../models')
 const Account = db.account
 const CONSTANT = require('../utils/account.constants')
+const jwtHelper = require('../helpers/jwt.helper')
+// Nen lưu vào Redis hoặc DB
+const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET
 require('dotenv').config()
 
 const validateUpdateProfile = () => {
   return [
     check('name', CONSTANT.NAME_SIZE).isLength({ min: 6, max: 32 }),
-    query('phone').custom((value, { req }) => {
-      return Account.findOne({
-        phone: value
-      }).then((account) => {
-        if (!account) {
-          return Promise.reject(CONSTANT.USER_NOT_FOUND)
-        }
-      })
+    header('x-access-token').custom(async (value, { req }) => {
+      const decoded = await jwtHelper.verifyToken(req.headers['x-access-token'], accessTokenSecret)
+      const userDecode = decoded.data
+      const email = userDecode.email
+      const phone = userDecode.phone
+      if (email) {
+        return Account.findOne({
+          email: email
+        }).then((account) => {
+          if (!account) {
+            return Promise.reject(CONSTANT.USER_NOT_FOUND)
+          }
+        })
+      } else {
+        return Account.findOne({
+          phone: phone
+        }).then((account) => {
+          if (!account) {
+            return Promise.reject(CONSTANT.USER_NOT_FOUND)
+          }
+        })
+      }
+    }),
+    header('x-access-token').custom(async (value, { req }) => {
+      const decoded = await jwtHelper.verifyToken(req.headers['x-access-token'], accessTokenSecret)
+      const userDecode = decoded.data
+      const email = userDecode.email
+      const phone = userDecode.phone
+      if (email || phone) {
+        return true
+      }
+      throw new Error('Token has problem')
     })
 
   ]
