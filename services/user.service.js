@@ -40,7 +40,6 @@ const updateProfilePhoneOrEmail = async (req, res) => {
     if (email) {
       // Khong the validate verify phone vi callback
       await phoneReg.verifyPhoneToken(req.body.phone, '+84', req.body.code, async function (err, response) {
-        console.log(err);
         if (err) {
           return res.status(400).send(new Response(true, 'Code is used or expired', null))
         } else {
