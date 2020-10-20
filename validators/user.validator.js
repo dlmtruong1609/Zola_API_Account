@@ -148,6 +148,12 @@ const validateUpdateProfilePhoneOrEmail = () => {
       const userDecode = decoded.data
       const email = userDecode.email
       const phone = userDecode.phone
+      if (phone && req.body.phone) {
+        throw new Error('Account had phone')
+      }
+      if (email && req.body.email) {
+        throw new Error('Account had email')
+      }
       if (email) {
         return Account.findOne({
           where: { email: email }
