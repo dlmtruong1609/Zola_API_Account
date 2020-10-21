@@ -270,7 +270,11 @@ const findUserByEmail = (res, email) => {
 }
 
 const findUserById = (res, id) => {
-  Account.findByPk(id).then((user) => {
+  Account.findByPk(id, {
+    attributes: {
+      exclude: ['password']
+    }
+  }).then((user) => {
     return res.status(200).send(
       new Response(false, CONSTANT.FIND_USER_SUCCESS, user)
     )

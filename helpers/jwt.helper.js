@@ -10,6 +10,7 @@ const generateToken = (user, secretSignature, tokenLife) => {
     // Định nghĩa những thông tin của user mà bạn muốn lưu vào token ở đây
     console.log(user.phone)
     const userData = {
+      id: user.id,
       name: user.name,
       phone: user.phone,
       email: user.email,
