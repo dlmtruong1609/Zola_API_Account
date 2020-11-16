@@ -6,7 +6,7 @@ const Account = db.account
 // const UserContact = db.userContact
 const jwtHelper = require('../helpers/jwt.helper')
 var { validationResult } = require('express-validator')
-const CONSTANT = require('../utils/account.constants')
+const CONSTANT = require('../constants/account.constants')
 require('dotenv').config()
 const phoneReg = require('./phone_verification')(process.env.API_KEY)
 const bcrypt = require('bcryptjs')

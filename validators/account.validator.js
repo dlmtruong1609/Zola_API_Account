@@ -2,7 +2,7 @@ const { check, query, header } = require('express-validator')
 const bcrypt = require('bcryptjs')
 const db = require('../models')
 const Account = db.account
-const CONSTANT = require('../utils/account.constants')
+const CONSTANT = require('../constants/account.constants')
 
 require('dotenv').config()
 const jwtHelper = require('../helpers/jwt.helper')

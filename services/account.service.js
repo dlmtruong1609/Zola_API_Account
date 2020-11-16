@@ -3,11 +3,13 @@ const Response = require('../utils/response')
 const db = require('../models')
 const Account = db.account
 var { validationResult } = require('express-validator')
-const CONSTANT = require('../utils/account.constants')
+const CONSTANT = require('../constants/account.constants')
 require('dotenv').config()
 const bcrypt = require('bcryptjs')
 const phoneReg = require('./phone_verification')(process.env.API_KEY)
 const mailService = require('./mail.service')
+
+const accountDao = require('../daos/account.dao')
 
 // Biến cục bộ trên server này sẽ lưu trữ tạm danh sách token
 // Nen lưu vào Redis hoặc DB
@@ -29,26 +31,7 @@ const errorFormatter = ({ location, msg, param, value, nestedErrors }) => {
     param: param
   }
 }
-const signinByPhone = async (res, phone) => {
-  await Account.findOne({
-    where: { phone: phone }
-  }).then(async (account) => {
-    const accessToken = await jwtHelper.generateToken(
-      account,
-      accessTokenSecret,
-      accessTokenLife
-    )
 
-    const refreshToken = await jwtHelper.generateToken(
-      account,
-      refreshTokenSecret,
-      refreshTokenLife
-    )
-    //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
-    tokenList[refreshToken] = { accessToken, refreshToken }
-    res.status(200).send(new Response(false, CONSTANT.SIGN_IN_SUCCESS, { accessToken, role: account.role }))
-  })
-}
 /**
  * service sign
  * @param {*} req
@@ -62,40 +45,14 @@ const signin = async (req, res) => {
   const phone = req.body.phone
   const email = req.body.email
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-    phone ? signinByPhone(res, phone) : signinByEmail(res, email)
+    const result = phone ? await accountDao.signinByPhone(phone) : await accountDao.signinByEmail(email)
+    res.status(200).send(new Response(false, CONSTANT.SIGN_IN_SUCCESS, result))
   } else {
-    console.log('phone: ' + phone)
     const response = new Response(true, CONSTANT.INVALID_VALUE, errs.array())
     res.status(400).send(response)
   }
 }
-/**
- * service sign
- * @param {*} req
- * @param {*} res
- * @param {body} phone
- * @param {body} password
- */
-const signinByEmail = async (res, email) => {
-  Account.findOne({
-    where: { email: email }
-  }).then(async (account) => {
-    const accessToken = await jwtHelper.generateToken(
-      account,
-      accessTokenSecret,
-      accessTokenLife
-    )
 
-    const refreshToken = await jwtHelper.generateToken(
-      account,
-      refreshTokenSecret,
-      refreshTokenLife
-    )
-    //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
-    tokenList[refreshToken] = { accessToken, refreshToken }
-    res.status(200).send(new Response(false, CONSTANT.SIGN_IN_SUCCESS, { accessToken, role: account.role }))
-  })
-}
 /**
  * service signup
  * @param {*} req
@@ -119,17 +76,8 @@ const sendSmsOTP = async (res, phone, messageSuccess) => {
  * service signup
  * @param {*} req
  * @param {*} res
- * @param {body} email
- * @param {body} name
- * @param {body} password
- * @param {body} passwordConfirm
- */
-
-/**
- * service signup
- * @param {*} req
- * @param {*} res
  * @param {body} phone
+ * @param {body} email
  * @param {body} name
  * @param {body} password
  * @param {body} passwordConfirm
@@ -147,7 +95,7 @@ const signup = async (req, res) => {
     console.log(password)
     const errs = validationResult(req).formatWith(errorFormatter) // format chung
     if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-      bcrypt.hash(password, 10).then((hash) => {
+      bcrypt.hash(password, 10).then(async (hash) => {
         const account = {
           phone: phone || '',
           email: email || '',
@@ -160,25 +108,21 @@ const signup = async (req, res) => {
           role: 'MEMBER',
           createdAt: new Date().getTime()
         }
-        Account
-          .create(account)
-          .then(async (user) => {
-            const accessToken = await jwtHelper.generateToken(
-              user,
-              accessTokenSecret,
-              accessTokenLife
-            )
-            const refreshToken = await jwtHelper.generateToken(
-              user,
-              refreshTokenSecret,
-              refreshTokenLife
-            )
-            //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
-            tokenList[refreshToken] = { accessToken, refreshToken }
-            res.status(200).send(new Response(false, CONSTANT.ACTIVE_SUCCESS, { accessToken, refreshToken }))
-          }).catch(err => {
-            console.log(err)
-          })
+        if (accountDao.create(account)) {
+          const accessToken = await jwtHelper.generateToken(
+            account,
+            accessTokenSecret,
+            accessTokenLife
+          )
+          const refreshToken = await jwtHelper.generateToken(
+            account,
+            refreshTokenSecret,
+            refreshTokenLife
+          )
+          //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
+          tokenList[refreshToken] = { accessToken, refreshToken }
+          res.status(200).send(new Response(false, CONSTANT.ACTIVE_SUCCESS, { accessToken, refreshToken }))
+        }
       })
     } else {
       const response = new Response(true, CONSTANT.INVALID_VALUE, errs.array())

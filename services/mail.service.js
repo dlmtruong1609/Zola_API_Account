@@ -2,7 +2,7 @@ require('dotenv').config()
 const accountSid = process.env.ACOUNTSID
 const authToken = process.env.AUTH_TOKEN
 const client = require('twilio')(accountSid, authToken)
-const CONSTANT = require('../utils/account.constants')
+const CONSTANT = require('../constants/account.constants')
 const Response = require('../utils/response')
 
 const sendOtpEmail = (res, email, messageSuccess) => {
