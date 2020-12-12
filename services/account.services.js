@@ -23,24 +23,23 @@ const signinByEmail = async (email) => {
   let refreshToken = null
   let accessToken = null
   let role = null
-  await Account.findOne({
+  const account = await Account.findOne({
     where: { email: email }
-  }).then(async (account) => {
-    accessToken = await jwtHelper.generateToken(
-      account,
-      accessTokenSecret,
-      accessTokenLife
-    )
-
-    refreshToken = await jwtHelper.generateToken(
-      account,
-      refreshTokenSecret,
-      refreshTokenLife
-    )
-    //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
-    tokenList[refreshToken] = { accessToken, refreshToken }
-    role = account.role
   })
+  accessToken = await jwtHelper.generateToken(
+    account,
+    accessTokenSecret,
+    accessTokenLife
+  )
+
+  refreshToken = await jwtHelper.generateToken(
+    account,
+    refreshTokenSecret,
+    refreshTokenLife
+  )
+  //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
+  tokenList[refreshToken] = { accessToken, refreshToken }
+  role = account.role
   return { accessToken, role: role }
 }
 
@@ -48,24 +47,23 @@ const signinByPhone = async (phone) => {
   let refreshToken = null
   let accessToken = null
   let role = null
-  await Account.findOne({
+  const account = await Account.findOne({
     where: { phone: phone }
-  }).then(async (account) => {
-    accessToken = await jwtHelper.generateToken(
-      account,
-      accessTokenSecret,
-      accessTokenLife
-    )
-
-    refreshToken = await jwtHelper.generateToken(
-      account,
-      refreshTokenSecret,
-      refreshTokenLife
-    )
-    //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
-    tokenList[refreshToken] = { accessToken, refreshToken }
-    role = account.role
   })
+  accessToken = await jwtHelper.generateToken(
+    account,
+    accessTokenSecret,
+    accessTokenLife
+  )
+
+  refreshToken = await jwtHelper.generateToken(
+    account,
+    refreshTokenSecret,
+    refreshTokenLife
+  )
+  //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
+  tokenList[refreshToken] = { accessToken, refreshToken }
+  role = account.role
   return { accessToken, role: role }
 }
 

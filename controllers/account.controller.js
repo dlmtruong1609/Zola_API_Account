@@ -43,7 +43,8 @@ const signin = async (req, res) => {
   const phone = req.body.phone
   const email = req.body.email
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
-    const result = phone ? await accountService.signinByPhone(phone) : await accountService.signinByEmail(email)
+    let result = null
+    if (phone) { result = await accountService.signinByPhone(phone) } else result = await accountService.signinByEmail(email)
     res.status(200).send(new Response(false, CONSTANT.SIGN_IN_SUCCESS, result))
   } else {
     const response = new Response(true, CONSTANT.INVALID_VALUE, errs.array())
