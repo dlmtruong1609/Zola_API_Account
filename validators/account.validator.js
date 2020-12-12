@@ -162,6 +162,26 @@ const validateChangePassword = () => {
         throw new Error(CONSTANT.PASSWORD_CONFIRM_INCORRECT)
       }
       return true
+    }),
+    check('phone', CONSTANT.IS_PHONE).optional({ checkFalsy: true }).matches(/((09|03|07|08|05)+([0-9]{8})\b)/),
+    check('phone').optional({ checkFalsy: true }).custom((value, { req }) => {
+      return Account.findOne({
+        where: { phone: value }
+      }).then((account) => {
+        if (!account) {
+          return Promise.reject(CONSTANT.USER_NOT_FOUND)
+        }
+      })
+    }),
+    check('email', CONSTANT.IS_EMAIL).optional({ checkFalsy: true }).isEmail(),
+    check('email').optional({ checkFalsy: true }).custom((value, { req }) => {
+      return Account.findOne({
+        where: { email: value }
+      }).then((account) => {
+        if (!account) {
+          return Promise.reject(CONSTANT.USER_NOT_FOUND)
+        }
+      })
     })
   ]
 }

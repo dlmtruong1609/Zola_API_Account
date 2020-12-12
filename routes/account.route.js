@@ -1,20 +1,20 @@
 const express = require('express')
 const router = express.Router()
-const accountService = require('../services/account.service')
+const accountController = require('../controllers/account.controller')
 const accountValidator = require('../validators/account.validator')
 
-router.post('/api/v0/accounts/signin', accountValidator.validateSignIn(), accountService.signin)
+router.post('/api/v0/accounts/signin', accountValidator.validateSignIn(), accountController.signin)
 
-router.get('/api/v0/accounts/passwords/forgot', accountValidator.validateForgotPassword(), accountService.forgotPassword)
+router.get('/api/v0/accounts/passwords/forgot', accountValidator.validateForgotPassword(), accountController.forgotPassword)
 
-router.put('/api/v0/accounts/passwords/change', accountValidator.validateChangePassword(), accountService.changePassword)
+router.put('/api/v0/accounts/passwords/change', accountValidator.validateChangePassword(), accountController.changePassword)
 
-router.post('/api/v0/accounts/signup', accountValidator.validateSignUp(), accountService.signup)
+router.post('/api/v0/accounts/signup', accountValidator.validateSignUp(), accountController.signup)
 
-router.get('/api/v0/accounts/active/send', accountValidator.validateSendOtp(), accountService.sendOtpSignUp)
+router.get('/api/v0/accounts/active/send', accountValidator.validateSendOtp(), accountController.sendOtpSignUp)
 
-router.post('/api/v0/accounts/code/password/verify', accountValidator.validateActive(), accountService.verifyCodeChangePassword)
+router.post('/api/v0/accounts/code/password/verify', accountValidator.validateActive(), accountController.verifyCodeChangePassword)
 
-router.post('/api/v0/accounts/code/verify', accountValidator.validateActive(), accountService.verifyOtpSignUp)
+router.post('/api/v0/accounts/code/verify', accountValidator.validateActive(), accountController.verifyOtpSignUp)
 
 module.exports = router

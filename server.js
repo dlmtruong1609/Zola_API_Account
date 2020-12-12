@@ -2,12 +2,12 @@ const express = require('express')
 const accountRouter = require('./routes/account.route')
 const userRouter = require('./routes/user.route')
 const logger = require('morgan')
+const cors = require('cors')
 
 require('dotenv').config()
-
-const cors = require('cors')
 const server = express()
 
+// config data from client
 server.use(logger('dev'))
 
 server.use(cors())
@@ -24,6 +24,7 @@ server.use(function (req, res, next) {
 server.use('/', accountRouter)
 server.use('/', userRouter)
 
+// connect db
 const db = require('./models')
 db.sequelize.sync({ alter: true }).then(() => {
   console.log('Drop and re-sync db.')
@@ -37,5 +38,5 @@ try {
 
 server.listen(process.env.PORT || '3333', (err) => {
   if (err) throw err
-  console.log('> Ready on http://localhost:3333')
+  console.log(`> Ready on http://localhost:${process.env.PORT}`)
 })
