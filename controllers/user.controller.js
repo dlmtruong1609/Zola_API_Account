@@ -1,5 +1,6 @@
 /* eslint-disable camelcase */
 const Response = require('../utils/response')
+
 const db = require('../models')
 const Account = db.account
 // const UserRequest = db.userRequest
@@ -84,23 +85,23 @@ const updateProfile = async (req, res) => {
   const userDecode = decoded.data
   const email = userDecode.email
   const phone = userDecode.phone
+  const data = {
+    name: name,
+    avatar: avatar
+  }
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
     if (phone) { // update by phone
       const user = await Account.findOne({
         where: { phone: phone }
       })
-      await user.update({
-        name: name,
-        avatar: avatar
-      })
+      await userService.updateUserForAllRoom(user.id, data)
+      await user.update(data)
     } else { // update by email
       const user = await Account.findOne({
         where: { email: email }
       })
-      await user.update({
-        name: name,
-        avatar: avatar
-      })
+      await userService.updateUserForAllRoom(user.id, data)
+      await user.update(data)
     }
     res.status(200).send(new Response(false, CONSTANT.UPDATE_PROFILE_SUCCESS, null))
   } else {
