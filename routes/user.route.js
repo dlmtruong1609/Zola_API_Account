@@ -13,7 +13,7 @@ router.get('/api/v0/users/list', userController.findAllUserByCurrentPage)
 router.post('/api/v0/users', userValidator.validateAddUser(), userController.addUser)
 router.put('/api/v0/users', userValidator.validateUpdate(), userController.update)
 router.get('/api/v0/users', userController.getALLlistUser)
-router.delete('/api/v0/users', userValidator.validateDelete(), userController.deleteUser)
+router.delete('/api/v0/users/:id', userValidator.validateDelete(), userController.deleteUser)
 router.get('/api/v0/users/detail', userController.find)
 
 module.exports = router

@@ -257,7 +257,7 @@ const update = async (req, res) => {
 }
 
 const deleteUser = async (req, res) => {
-  const id = req.query.id
+  const id = req.params.id
   const errs = validationResult(req).formatWith(errorFormatter) // format chung
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
     await Account.destroy({
