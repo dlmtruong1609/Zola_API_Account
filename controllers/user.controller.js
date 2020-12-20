@@ -225,16 +225,12 @@ const find = async (req, res) => {
 
 const update = async (req, res) => {
   const errs = validationResult(req).formatWith(errorFormatter) // format chung
-  const id = req.query.id
-  const phone = req.query.phone
-  const email = req.query.email
+  const id = req.params.id
   const name = req.body.name
   const avatar = req.body.avatar
   const role = req.body.role
   const active = req.body.active
   const user = {
-    phone: phone,
-    email: email,
     name: name,
     avatar: avatar,
     role: role,

@@ -11,7 +11,7 @@ router.get('/api/v0/users/search', userController.search)
 
 router.get('/api/v0/users/list', userController.findAllUserByCurrentPage)
 router.post('/api/v0/users', userValidator.validateAddUser(), userController.addUser)
-router.put('/api/v0/users', userValidator.validateUpdate(), userController.update)
+router.put('/api/v0/users/:id', userValidator.validateUpdate(), userController.update)
 router.get('/api/v0/users', userController.getALLlistUser)
 router.delete('/api/v0/users/:id', userValidator.validateDelete(), userController.deleteUser)
 router.get('/api/v0/users/detail', userController.find)
