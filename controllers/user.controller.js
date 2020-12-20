@@ -1,6 +1,3 @@
-/* eslint-disable camelcase */
-const Response = require('../utils/response')
-
 const db = require('../models')
 const Account = db.account
 // const UserRequest = db.userRequest
@@ -43,7 +40,7 @@ const updateProfilePhoneOrEmail = async (req, res) => {
     if (email) { // add phone for user had email
       const result = await phoneService.verifyOtp(phone, code)
       if (result !== true) {
-        return res.status(400).send(new Response(true, 'Code is used or expired', null))
+        return res.status(400).send('Code is used or expired')
       } else {
         const user = await Account.findOne({
           where: { email: email }
@@ -61,10 +58,9 @@ const updateProfilePhoneOrEmail = async (req, res) => {
         email: req.body.email
       })
     }
-    res.status(200).send(new Response(false, CONSTANT.UPDATE_PROFILE_SUCCESS, null))
+    res.status(200).send(CONSTANT.UPDATE_PROFILE_SUCCESS)
   } else {
-    const response = new Response(true, CONSTANT.INVALID_VALUE, errs.array())
-    res.status(400).send(response)
+    res.status(400).send(errs.array())
   }
 }
 
@@ -103,10 +99,11 @@ const updateProfile = async (req, res) => {
       await userService.updateUserForAllRoom(user.id, data)
       await user.update(data)
     }
-    res.status(200).send(new Response(false, CONSTANT.UPDATE_PROFILE_SUCCESS, null))
+    res.status(200).send({
+      message: CONSTANT.UPDATE_PROFILE_SUCCESS
+    })
   } else {
-    const response = new Response(true, CONSTANT.INVALID_VALUE, errs.array())
-    res.status(400).send(response)
+    res.status(400).send(errs.array())
   }
 }
 
@@ -151,10 +148,10 @@ const findAllUserByCurrentPage = async (req, res) => {
       limit: perPage,
       offset: currentPage
     })
-    res.status(200).send(new Response(false, CONSTANT.FIND_USER_SUCCESS, users || []))
+    res.status(200).send(users || [])
   } catch (error) {
     // eslint-disable-next-line no-undef
-    res.status(500).send(new Response(true, error, null))
+    res.status(500).send(error)
   }
 }
 
@@ -177,15 +174,17 @@ const addUser = async (req, res) => {
     // Save Tutorial in the database
     Account.create(user)
       .then(data => {
-        res.status(201).send(new Response(false, CONSTANT.USER_ADD_SUCCESS, null))
+        res.status(201).send({
+          message: CONSTANT.USER_ADD_SUCCESS
+        })
       })
       .catch(err => {
-        res.status(500).json(new Response(true, err.message || 'Some error occurred while creating the Tutorial.', null))
+        res.status(500).json({
+          message: err.message || 'Some error occurred while creating the user.'
+        })
       })
   } else {
-    const response = new Response(true, CONSTANT.INVALID_VALUE, errs.array())
-
-    res.status(400).send(response)
+    res.status(400).send(errs.array())
   }
 }
 
@@ -196,7 +195,7 @@ const getALLlistUser = async (_req, res) => {
     }
   })
   return res.status(200).send(
-    new Response(false, CONSTANT.USER_LIST, allUser)
+    allUser
   )
 }
 
@@ -215,14 +214,12 @@ const find = async (req, res) => {
       user = await userService.findUserById(id)
     }
     if (user) {
-      res.send(new Response(false, CONSTANT.FIND_SUCCESS, user))
+      res.send(user)
     } else {
-      res.send(new Response(true, CONSTANT.USER_NOT_FOUND, user))
+      res.send(user)
     }
   } else {
-    const response = new Response(true, CONSTANT.INVALID_VALUE, errs.array())
-
-    res.status(400).send(response)
+    res.status(400).send(errs.array())
   }
 }
 
@@ -251,10 +248,11 @@ const update = async (req, res) => {
       role: user.role,
       active: user.active
     })
-    res.status(200).send(new Response(false, CONSTANT.UPDATE_PROFILE_SUCCESS, null))
+    res.status(200).send({
+      message: CONSTANT.UPDATE_PROFILE_SUCCESS
+    })
   } else {
-    const response = new Response(true, CONSTANT.INVALID_VALUE, errs.array())
-    res.status(400).send(response)
+    res.status(400).send(errs.array())
   }
 }
 
@@ -265,10 +263,11 @@ const deleteUser = async (req, res) => {
     await Account.destroy({
       where: { id: id }
     })
-    res.status(200).send(new Response(false, CONSTANT.DELETE_SUCCESS, null))
+    res.status(200).send({
+      message: CONSTANT.DELETE_SUCCESS
+    })
   } else {
-    const response = new Response(true, CONSTANT.INVALID_VALUE, errs.array())
-    res.status(400).send(response)
+    res.status(400).send(errs.array())
   }
 }
 

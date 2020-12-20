@@ -1,5 +1,4 @@
 const jwtHelper = require('../helpers/jwt.helper')
-const Response = require('../utils/response')
 const db = require('../models')
 const Account = db.account
 var { validationResult } = require('express-validator')
@@ -45,10 +44,9 @@ const signin = async (req, res) => {
   if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
     let result = null
     if (phone) { result = await accountService.signinByPhone(phone) } else result = await accountService.signinByEmail(email)
-    res.status(200).send(new Response(false, CONSTANT.SIGN_IN_SUCCESS, result))
+    res.status(200).send(result)
   } else {
-    const response = new Response(true, CONSTANT.INVALID_VALUE, errs.array())
-    res.status(400).send(response)
+    res.status(400).send(errs.array())
   }
 }
 
@@ -101,14 +99,13 @@ const signup = async (req, res) => {
         )
         //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
         tokenList[refreshToken] = { accessToken, refreshToken }
-        res.status(200).send(new Response(false, CONSTANT.ACTIVE_SUCCESS, { accessToken, refreshToken }))
+        res.status(200).send(tokenList[refreshToken])
       }
     } else {
-      const response = new Response(true, CONSTANT.INVALID_VALUE, errs.array())
-      res.send(response)
+      res.send(errs.array())
     }
   } catch (error) {
-    res.status(500).send(new Response(true, error, null))
+    res.status(500).send(error)
   }
 }
 
@@ -126,19 +123,26 @@ const sendOtpSignUp = async (req, res) => {
     if (phone) { // send phone
       const result = await phoneService.sendSmsOTP(phone)
       if (result !== true) {
-        res.status(500).json(new Response(true, CONSTANT.SMS_FAILED, result))
+        res.status(500).json({
+          message: CONSTANT.SMS_FAILED
+        })
       } else {
-        res.status(201).json(new Response(false, CONSTANT.SEND_SUCCESS, null))
+        res.status(201).json({
+          message: CONSTANT.SEND_SUCCESS
+        })
       }
     } else { // send email
       const result = await mailService.sendOtpEmail(email)
       // return
-      result ? res.status(201).send(new Response(false, CONSTANT.SEND_SUCCESS, null))
-        : res.status(500).send(new Response(true, CONSTANT.SEND_MAIL_FAILED, null))
+      result ? res.status(201).send({
+        message: CONSTANT.SEND_SUCCESS
+      })
+        : res.status(500).send({
+          message: CONSTANT.SEND_MAIL_FAILED
+        })
     }
   } else {
-    const response = new Response(true, CONSTANT.INVALID_VALUE, errs.array())
-    res.send(response)
+    res.send(errs.array())
   }
 }
 
@@ -166,20 +170,26 @@ const verifyOtpSignUp = async (req, res) => {
   if (phone) {
     const result = await phoneService.verifyOtp(phone, code)
     if (result) {
-      res.status(200).send(new Response(false, CONSTANT.CODE_VERIFIED, { accessToken, refreshToken }))
+      res.status(200).send(tokenList[refreshToken])
     } else {
-      res.status(400).send(new Response(true, 'Code is used or expired', null))
+      res.status(400).send({
+        message: 'Code is used or expired'
+      })
     }
   } else if (email) {
     // verify code
     const result = await mailService.verifyOtpEmail(email, code)
     if (result) {
-      res.status(200).send(new Response(false, CONSTANT.CODE_VERIFIED, tokenList[refreshToken]))
+      res.status(200).send(tokenList[refreshToken])
     } else {
-      res.status(400).send(new Response(true, 'Code is used or expired', null))
+      res.status(400).send({
+        message: 'Code is used or expired'
+      })
     }
   } else {
-    res.status(400).send(new Response(true, 'Please enter email or phone to valid otp', null))
+    res.status(400).send({
+      message: 'Please enter email or phone to valid otp'
+    })
   }
 }
 /**
@@ -212,9 +222,11 @@ const verifyCodeChangePassword = async (req, res) => {
       //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
       tokenList[refreshToken] = { accessToken, refreshToken }
 
-      res.status(200).send(new Response(false, CONSTANT.CODE_VERIFIED, { accessToken, refreshToken }))
+      res.status(200).send(tokenList[refreshToken])
     } else {
-      res.status(400).send(new Response(true, 'Code is used or expired', null))
+      res.status(400).send({
+        message: 'Code is used or expired'
+      })
     }
   } else if (email) {
     // verify code
@@ -236,12 +248,16 @@ const verifyCodeChangePassword = async (req, res) => {
     //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
     tokenList[refreshToken] = { accessToken, refreshToken }
     if (result) {
-      res.status(200).send(new Response(false, CONSTANT.CODE_VERIFIED, { accessToken, refreshToken }))
+      res.status(200).send(tokenList[refreshToken])
     } else {
-      res.status(400).send(new Response(true, 'Code is used or expired', null))
+      res.status(400).send({
+        message: 'Code is used or expired'
+      })
     }
   } else {
-    res.status(400).send(new Response(true, 'Please enter email or phone to valid otp', null))
+    res.status(400).send({
+      message: 'Please enter email or phone to valid otp'
+    })
   }
 }
 
@@ -259,21 +275,30 @@ const forgotPassword = async (req, res) => {
     if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
       const result = await phoneService.sendSmsOTP(phone)
       if (result !== true) {
-        res.status(500).json(new Response(true, CONSTANT.SMS_FAILED, result))
+        res.status(500).json({
+          message: CONSTANT.SMS_FAILED
+        })
       } else {
-        res.status(201).json(new Response(false, CONSTANT.SEND_SUCCESS, null))
+        res.status(201).json({
+          message: CONSTANT.SEND_SUCCESS
+        })
       }
     } else {
-      const response = new Response(true, CONSTANT.INVALID_VALUE, errs.array())
-      res.status(400).send(response)
+      res.status(400).send(errs.array())
     }
   } else if (email) {
     const result = await mailService.sendOtpEmail(email)
     // return
-    result ? res.status(201).send(new Response(false, CONSTANT.SEND_SUCCESS, null))
-      : res.status(500).send(new Response(true, CONSTANT.SEND_MAIL_FAILED, null))
+    result ? res.status(201).send({
+      message: CONSTANT.SEND_SUCCESS
+    })
+      : res.status(500).send({
+        message: CONSTANT.SEND_MAIL_FAILED
+      })
   } else {
-    res.status(400).send(new Response(true, 'Please enter email or phone to valid otp', null))
+    res.status(400).send({
+      message: 'Please enter email or phone to valid otp'
+    })
   }
 }
 
@@ -314,13 +339,14 @@ const changePassword = async (req, res) => {
           password: hash
         })
       }
-      res.status(200).send(new Response(false, CONSTANT.CHANGE_SUCCESS, null))
+      res.status(200).send({
+        message: CONSTANT.CHANGE_SUCCESS
+      })
     } else {
-      const response = new Response(true, CONSTANT.INVALID_VALUE, errs.array())
-      res.status(400).send(response)
+      res.status(400).send(errs.array())
     }
   } catch (error) {
-    res.status(500).send(new Response(true, error, null))
+    res.status(500).send(error)
   }
 }
 
