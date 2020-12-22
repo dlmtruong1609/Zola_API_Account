@@ -102,7 +102,7 @@ const signup = async (req, res) => {
         res.status(200).send(tokenList[refreshToken])
       }
     } else {
-      res.send(errs.array())
+      res.status(400).send(errs.array())
     }
   } catch (error) {
     res.status(500).send(error)
@@ -142,7 +142,7 @@ const sendOtpSignUp = async (req, res) => {
         })
     }
   } else {
-    res.send(errs.array())
+    res.status(400).send(errs.array())
   }
 }
 
