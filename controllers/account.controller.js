@@ -270,9 +270,9 @@ const verifyCodeChangePassword = async (req, res) => {
 const forgotPassword = async (req, res) => {
   const phone = req.query.phone
   const email = req.query.email
-  if (phone) {
-    const errs = validationResult(req).formatWith(errorFormatter) // format chung
-    if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
+  const errs = validationResult(req).formatWith(errorFormatter) // format chung
+  if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
+    if (phone) {
       const result = await phoneService.sendSmsOTP(phone)
       if (result !== true) {
         res.status(500).json({
@@ -283,22 +283,22 @@ const forgotPassword = async (req, res) => {
           message: CONSTANT.SEND_SUCCESS
         })
       }
-    } else {
-      res.status(400).send(errs.array())
-    }
-  } else if (email) {
-    const result = await mailService.sendOtpEmail(email)
-    // return
-    result ? res.status(201).send({
-      message: CONSTANT.SEND_SUCCESS
-    })
-      : res.status(500).send({
-        message: CONSTANT.SEND_MAIL_FAILED
+    } else if (email) {
+      const result = await mailService.sendOtpEmail(email)
+      // return
+      result ? res.status(201).send({
+        message: CONSTANT.SEND_SUCCESS
       })
+        : res.status(500).send({
+          message: CONSTANT.SEND_MAIL_FAILED
+        })
+    } else {
+      res.status(400).send({
+        message: 'Please enter email or phone to valid otp'
+      })
+    }
   } else {
-    res.status(400).send({
-      message: 'Please enter email or phone to valid otp'
-    })
+    res.status(400).send(errs.array())
   }
 }
 
