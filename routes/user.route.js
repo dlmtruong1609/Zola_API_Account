@@ -5,7 +5,7 @@ const userValidator = require('../validators/user.validator')
 
 router.put('/api/v0/users/profiles', userValidator.validateUpdateProfile(), userController.updateProfile)
 
-router.put('/api/v0/users/profile/contacts', userValidator.validateUpdateProfilePhoneOrEmail(), userController.updateProfilePhoneOrEmail)
+router.put('/api/v0/users/profiles/contacts', userValidator.validateUpdateProfilePhoneOrEmail(), userController.updateProfilePhoneOrEmail)
 
 router.get('/api/v0/users/search', userController.search)
 
