@@ -123,9 +123,12 @@ const sendOtpSignUp = async (req, res) => {
     if (phone) { // send phone
       const result = await phoneService.sendSmsOTP(phone)
       if (result !== true) {
-        res.status(500).json({
-          message: CONSTANT.SMS_FAILED
-        })
+        res.status(500).json([
+          {
+            msg: CONSTANT.SMS_FAILED,
+            param: 'sms'
+          }
+        ])
       } else {
         res.status(201).json({
           message: CONSTANT.SEND_SUCCESS
@@ -137,9 +140,10 @@ const sendOtpSignUp = async (req, res) => {
       result ? res.status(201).send({
         message: CONSTANT.SEND_SUCCESS
       })
-        : res.status(500).send({
-          message: CONSTANT.SEND_MAIL_FAILED
-        })
+        : res.status(500).send([{
+          msg: CONSTANT.SEND_MAIL_FAILED,
+          param: 'mail'
+        }])
     }
   } else {
     res.status(400).send(errs.array())
@@ -172,9 +176,10 @@ const verifyOtpSignUp = async (req, res) => {
     if (result) {
       res.status(200).send(tokenList[refreshToken])
     } else {
-      res.status(400).send({
-        message: 'Code is used or expired'
-      })
+      res.status(400).send([{
+        msg: 'Code is used or expired',
+        param: 'otp'
+      }])
     }
   } else if (email) {
     // verify code
@@ -182,14 +187,16 @@ const verifyOtpSignUp = async (req, res) => {
     if (result) {
       res.status(200).send(tokenList[refreshToken])
     } else {
-      res.status(400).send({
-        message: 'Code is used or expired'
-      })
+      res.status(400).send([{
+        msg: 'Code is used or expired',
+        param: 'otp'
+      }])
     }
   } else {
-    res.status(400).send({
-      message: 'Please enter email or phone to valid otp'
-    })
+    res.status(400).send([{
+      msg: 'Please enter email or phone to valid otp',
+      param: 'email_or_phone'
+    }])
   }
 }
 /**
@@ -224,9 +231,10 @@ const verifyCodeChangePassword = async (req, res) => {
 
       res.status(200).send(tokenList[refreshToken])
     } else {
-      res.status(400).send({
-        message: 'Code is used or expired'
-      })
+      res.status(400).send([{
+        msg: 'Code is used or expired',
+        param: 'otp'
+      }])
     }
   } else if (email) {
     // verify code
@@ -250,14 +258,16 @@ const verifyCodeChangePassword = async (req, res) => {
     if (result) {
       res.status(200).send(tokenList[refreshToken])
     } else {
-      res.status(400).send({
-        message: 'Code is used or expired'
-      })
+      res.status(400).send([{
+        msg: 'Code is used or expired',
+        param: 'otp'
+      }])
     }
   } else {
-    res.status(400).send({
-      message: 'Please enter email or phone to valid otp'
-    })
+    res.status(400).send([{
+      msg: 'Please enter email or phone to valid otp',
+      param: 'phone_or_email'
+    }])
   }
 }
 
@@ -275,9 +285,10 @@ const forgotPassword = async (req, res) => {
     if (phone) {
       const result = await phoneService.sendSmsOTP(phone)
       if (result !== true) {
-        res.status(500).json({
-          message: CONSTANT.SMS_FAILED
-        })
+        res.status(500).json([{
+          msg: CONSTANT.SMS_FAILED,
+          param: 'sms'
+        }])
       } else {
         res.status(201).json({
           message: CONSTANT.SEND_SUCCESS
@@ -289,9 +300,10 @@ const forgotPassword = async (req, res) => {
       result ? res.status(201).send({
         message: CONSTANT.SEND_SUCCESS
       })
-        : res.status(500).send({
-          message: CONSTANT.SEND_MAIL_FAILED
-        })
+        : res.status(500).send([{
+          msg: CONSTANT.SEND_MAIL_FAILED,
+          param: 'mail'
+        }])
     } else {
       res.status(400).send({
         message: 'Please enter email or phone to valid otp'

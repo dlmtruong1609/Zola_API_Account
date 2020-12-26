@@ -179,9 +179,10 @@ const addUser = async (req, res) => {
         })
       })
       .catch(err => {
-        res.status(500).json({
-          message: err.message || 'Some error occurred while creating the user.'
-        })
+        res.status(500).json([{
+          msg: err.message || 'Some error occurred while creating the user.',
+          param: 'user'
+        }])
       })
   } else {
     res.status(400).send(errs.array())
@@ -213,11 +214,7 @@ const find = async (req, res) => {
     } else { // find by id
       user = await userService.findUserById(id)
     }
-    if (user) {
-      res.send(user)
-    } else {
-      res.send(user)
-    }
+    res.status(200).send(user)
   } else {
     res.status(400).send(errs.array())
   }
