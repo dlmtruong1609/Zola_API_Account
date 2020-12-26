@@ -69,8 +69,8 @@ const signinByPhone = async (phone) => {
 
 const create = async (account) => {
   const success = await Account.create(account)
-  if (success) return true
-  return false
+  if (success) return success
+  return null
 }
 module.exports = {
   signinByEmail: signinByEmail,

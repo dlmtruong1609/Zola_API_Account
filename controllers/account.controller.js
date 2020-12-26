@@ -86,7 +86,8 @@ const signup = async (req, res) => {
         role: 'MEMBER',
         createdAt: new Date().getTime()
       }
-      if (accountService.create(account)) {
+      const { id } = await accountService.create(account)
+      if (id) {
         const accessToken = await jwtHelper.generateToken(
           account,
           accessTokenSecret,
