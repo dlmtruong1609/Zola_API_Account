@@ -1,6 +1,6 @@
 /* eslint-disable handle-callback-err */
 /* eslint-disable camelcase */
-const { check, header } = require('express-validator')
+const { check, header, param } = require('express-validator')
 const db = require('../models')
 const Account = db.account
 const CONSTANT = require('../constants/account.constants')
@@ -77,8 +77,8 @@ const validateUpdate = () => {
     // check("phone", CONSTANT.IS_PHONE).matches(/((09|03|07|08|05)+([0-9]{8})\b)/g),
     check('name', CONSTANT.NAME_SIZE).isLength({ min: 6, max: 32 }),
     check('role', CONSTANT.ROLE_INCORRECT).matches(/MEMBER|ADMIN/),
-    check('id').custom((value, { req }) => {
-      return Account.findByPk(req.query.id).then((account) => {
+    param('id').custom((value, { req }) => {
+      return Account.findByPk(value).then((account) => {
         if (!account) {
           return Promise.reject(CONSTANT.USER_NOT_FOUND)
         }
@@ -90,15 +90,15 @@ const validateUpdate = () => {
 const validateDelete = () => {
   return [
     // check("phone", CONSTANT.IS_PHONE).matches(/((09|03|07|08|05)+([0-9]{8})\b)/g),
-    check('id').custom((value, { req }) => {
-      return Account.findByPk(req.query.id).then((account) => {
+    param('id').custom((value, { req }) => {
+      return Account.findByPk(value).then((account) => {
         if (!account) {
           return Promise.reject(CONSTANT.USER_NOT_FOUND)
         }
       })
     }),
-    check('id').custom((value, { req }) => {
-      return Account.findByPk(req.query.id).then((account) => {
+    param('id').custom((value, { req }) => {
+      return Account.findByPk(value).then((account) => {
         if (account && account.active === true) {
           return Promise.reject(CONSTANT.ACCCOUNT_IS_ACTIVE)
         }
