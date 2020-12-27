@@ -242,6 +242,7 @@ const validateActive = () => {
       return Account.findOne({
         where: { email: value }
       }).then((account) => {
+        console.log(!account)
         if (!account) {
           return Promise.reject(CONSTANT.USER_NOT_FOUND)
         }

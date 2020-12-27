@@ -7,8 +7,8 @@ const jwt = require('jsonwebtoken')
  */
 const generateToken = (user, secretSignature, tokenLife) => {
   return new Promise((resolve, reject) => {
+    console.log(user)
     // Định nghĩa những thông tin của user mà bạn muốn lưu vào token ở đây
-    console.log(user.phone)
     const userData = {
       id: user.id,
       name: user.name,

@@ -87,6 +87,7 @@ const signup = async (req, res) => {
         createdAt: new Date().getTime()
       }
       const { id } = await accountService.create(account)
+      account.id = id
       if (id) {
         const accessToken = await jwtHelper.generateToken(
           account,
@@ -210,12 +211,42 @@ const verifyCodeChangePassword = async (req, res) => {
   const phone = req.body.phone
   const code = req.body.code
   const email = req.body.email
-  if (phone) {
-    const result = await phoneService.verifyOtp(phone, code)
-    if (result) {
+  const errs = validationResult(req).formatWith(errorFormatter) // format chung
+  if (typeof errs.array() === 'undefined' || errs.array().length === 0) {
+    if (phone) {
+      const result = await phoneService.verifyOtp(phone, code)
+      if (result) {
+        const account = await Account.findOne({
+          where: { phone: phone }
+        })
+        const accessToken = await jwtHelper.generateToken(
+          account,
+          accessTokenSecret,
+          accessTokenLife
+        )
+
+        const refreshToken = await jwtHelper.generateToken(
+          account,
+          refreshTokenSecret,
+          refreshTokenLife
+        )
+        //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
+        tokenList[refreshToken] = { accessToken, refreshToken }
+
+        res.status(200).send(tokenList[refreshToken])
+      } else {
+        res.status(400).send([{
+          msg: 'Code is used or expired',
+          param: 'otp'
+        }])
+      }
+    } else if (email) {
+    // verify code
+      const result = await mailService.verifyOtpEmail(email, code)
       const account = await Account.findOne({
-        where: { phone: phone }
+        where: { email: email }
       })
+      console.log(account)
       const accessToken = await jwtHelper.generateToken(
         account,
         accessTokenSecret,
@@ -229,46 +260,22 @@ const verifyCodeChangePassword = async (req, res) => {
       )
       //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
       tokenList[refreshToken] = { accessToken, refreshToken }
-
-      res.status(200).send(tokenList[refreshToken])
+      if (result) {
+        res.status(200).send(tokenList[refreshToken])
+      } else {
+        res.status(400).send([{
+          msg: 'Code is used or expired',
+          param: 'otp'
+        }])
+      }
     } else {
       res.status(400).send([{
-        msg: 'Code is used or expired',
-        param: 'otp'
-      }])
-    }
-  } else if (email) {
-    // verify code
-    const result = await mailService.verifyOtpEmail(phone, code)
-    const account = await Account.findOne({
-      where: { email: email }
-    })
-    const accessToken = await jwtHelper.generateToken(
-      account,
-      accessTokenSecret,
-      accessTokenLife
-    )
-
-    const refreshToken = await jwtHelper.generateToken(
-      account,
-      refreshTokenSecret,
-      refreshTokenLife
-    )
-    //  nên lưu chỗ khác, có thể lưu vào Redis hoặc DB
-    tokenList[refreshToken] = { accessToken, refreshToken }
-    if (result) {
-      res.status(200).send(tokenList[refreshToken])
-    } else {
-      res.status(400).send([{
-        msg: 'Code is used or expired',
-        param: 'otp'
+        msg: 'Please enter email or phone to valid otp',
+        param: 'phone_or_email'
       }])
     }
   } else {
-    res.status(400).send([{
-      msg: 'Please enter email or phone to valid otp',
-      param: 'phone_or_email'
-    }])
+    res.status(400).send(errs.array())
   }
 }
 
